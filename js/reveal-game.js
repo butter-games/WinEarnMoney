@@ -110,20 +110,38 @@ const RevealGame = (() => {
   let wrongCount = 0;
   let hintShown = false;
 
-  // Fetch image URL from Wikipedia API
+  // Fetch image URL from Wikipedia MediaWiki API (CORS-friendly with origin=*)
   async function fetchWikiImage(wikiTitle) {
-    const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${wikiTitle}`;
+    // Method 1: MediaWiki API with explicit CORS support
     try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Failed to fetch");
-      const data = await res.json();
-      if (data.thumbnail && data.thumbnail.source) {
-        // Request a larger image by modifying the thumbnail URL
-        return data.thumbnail.source.replace(/\/\d+px-/, "/500px-");
+      const apiUrl = `https://en.wikipedia.org/w/api.php?action=query&titles=${wikiTitle}&prop=pageimages&format=json&pithumbsize=500&origin=*`;
+      const res = await fetch(apiUrl);
+      if (res.ok) {
+        const data = await res.json();
+        const pages = data.query.pages;
+        const page = Object.values(pages)[0];
+        if (page && page.thumbnail && page.thumbnail.source) {
+          return page.thumbnail.source;
+        }
       }
     } catch (e) {
-      console.warn("Failed to fetch image for", wikiTitle, e);
+      console.warn("MediaWiki API failed for", wikiTitle, e);
     }
+
+    // Method 2: REST API fallback
+    try {
+      const restUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${wikiTitle}`;
+      const res = await fetch(restUrl);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.thumbnail && data.thumbnail.source) {
+          return data.thumbnail.source.replace(/\/\d+px-/, "/500px-");
+        }
+      }
+    } catch (e) {
+      console.warn("REST API failed for", wikiTitle, e);
+    }
+
     return null;
   }
 
@@ -184,18 +202,42 @@ const RevealGame = (() => {
 
     // Fetch and load image from Wikipedia
     const img = document.getElementById("celebrity-image");
+    img.style.background = "";
     const imageUrl = await fetchWikiImage(currentCelebrity.wiki);
 
     if (imageUrl) {
-      img.src = imageUrl;
+      // Set handlers before src to catch the load event
       await new Promise((resolve) => {
         img.onload = resolve;
-        img.onerror = resolve;
+        img.onerror = () => {
+          console.warn("Image failed to load:", imageUrl);
+          showFallbackImage(img);
+          resolve();
+        };
+        img.src = imageUrl;
       });
     } else {
-      // Fallback: create a colored placeholder
-      img.src = "";
-      img.style.background = `linear-gradient(135deg, hsl(${Math.random() * 360}, 60%, 30%), hsl(${Math.random() * 360}, 60%, 20%))`;
+      showFallbackImage(img);
+    }
+
+    function showFallbackImage(imgEl) {
+      // Draw a placeholder on a canvas and use as image source
+      const canvas = document.createElement("canvas");
+      canvas.width = 500;
+      canvas.height = 500;
+      const ctx = canvas.getContext("2d");
+      const hue = Math.floor(Math.random() * 360);
+      const gradient = ctx.createLinearGradient(0, 0, 500, 500);
+      gradient.addColorStop(0, `hsl(${hue}, 50%, 25%)`);
+      gradient.addColorStop(1, `hsl(${(hue + 60) % 360}, 50%, 15%)`);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 500, 500);
+      ctx.fillStyle = "rgba(255,255,255,0.15)";
+      ctx.font = "bold 80px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("?", 250, 250);
+      imgEl.src = canvas.toDataURL();
     }
 
     // Enable controls after image loads
