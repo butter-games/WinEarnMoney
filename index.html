@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WinEarnMoney - Play Games, Win Rewards!</title>
-  <meta name="description" content="Play exciting games and earn real rewards. Spin the wheel, compete on leaderboards, and win big!">
+  <meta name="description" content="Play exciting games and earn real rewards. Guess celebrities, compete in tournaments, and win big!">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -13,10 +13,11 @@
     <div class="container navbar-content">
       <a href="#" class="logo">Win<span>Earn</span>Money</a>
       <ul class="nav-links">
-        <li><a href="#games">Games</a></li>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="games/reveal.html">Games</a></li>
         <li><a href="games/tournament.html">Tournaments</a></li>
-        <li><a href="#features">Features</a></li>
-        <li><a href="#leaderboard">Leaderboard</a></li>
+        <li><a href="games/subscription.html">Subscriptions</a></li>
+        <li><a href="games/withdraw.html">Withdrawals</a></li>
       </ul>
       <div class="nav-auth">
         <button class="btn btn-outline nav-login" onclick="Auth.showModal('login')">Log In</button>
@@ -41,10 +42,10 @@
   <section class="hero">
     <div class="container hero-content">
       <h1>Play Games.<br><span class="highlight">Win Real Rewards.</span></h1>
-      <p class="hero-subtitle">Spin the wheel, complete challenges, and climb the leaderboard. Your next win is just a click away.</p>
+      <p class="hero-subtitle">Guess celebrities, compete in tournaments, and climb the leaderboard. Your next win is just a click away.</p>
       <div class="hero-buttons">
-        <a href="#play" class="btn btn-primary btn-lg" id="hero-cta" onclick="Auth.handlePlayClick(event)">Start Playing</a>
-        <a href="#how-it-works" class="btn btn-outline btn-lg">Learn More</a>
+        <a href="games/reveal.html" class="btn btn-primary btn-lg" id="hero-cta">Start Playing</a>
+        <a href="games/tournament.html" class="btn btn-outline btn-lg">Join Tournament</a>
       </div>
       <div class="hero-stats">
         <div class="stat">
@@ -108,7 +109,7 @@
         <div class="step">
           <div class="step-number">2</div>
           <h3>Play Games</h3>
-          <p>Spin the wheel, answer trivia, and complete daily challenges.</p>
+          <p>Reveal celebrities, join tournaments, and compete against real players.</p>
         </div>
         <div class="step-connector"></div>
         <div class="step">
@@ -120,79 +121,25 @@
     </div>
   </section>
 
-  <!-- Play Section - Spin the Wheel -->
-  <section id="play" class="play-section">
-    <div class="container">
-      <h2 class="section-title">Try Your Luck!</h2>
-      <p class="section-subtitle">Give the wheel a spin and see what you can win.</p>
-      <div class="game-area">
-        <div class="wheel-container">
-          <div class="wheel-pointer">&#9660;</div>
-          <canvas id="wheel-canvas" width="400" height="400"></canvas>
-        </div>
-        <div class="game-controls">
-          <button id="spin-btn" class="btn btn-primary btn-lg spin-btn">Spin the Wheel!</button>
-          <div id="result-display" class="result-display hidden">
-            <p>You won:</p>
-            <span id="result-text" class="result-text"></span>
-          </div>
-          <div class="spins-remaining">
-            <span>Daily spins remaining: </span>
-            <span id="spins-count" class="spins-count">3</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <!-- Games Section -->
   <section id="games" class="games-section">
     <div class="container">
       <h2 class="section-title">Our Games</h2>
       <p class="section-subtitle">Choose a game and start earning real cash prizes.</p>
-      <div class="games-grid games-grid-3">
-        <a href="games/tournament.html" class="game-card game-card-featured">
+      <div class="games-grid">
+        <a href="games/reveal.html" class="game-card game-card-featured">
           <div class="game-card-badge">HOT</div>
-          <div class="game-card-icon">&#127942;</div>
-          <h3>Champs League</h3>
-          <p>P2P tournaments with real cash prizes. Compete against players live!</p>
-          <span class="game-card-cta">Join Tournament &rarr;</span>
-        </a>
-        <a href="games/reveal.html" class="game-card">
           <div class="game-card-icon">&#128248;</div>
           <h3>Reveal the Celebrity</h3>
           <p>Guess the celebrity behind the tiles. Fewer reveals = more points!</p>
           <span class="game-card-cta">Play Now &rarr;</span>
         </a>
-        <a href="#play" class="game-card">
-          <div class="game-card-icon">&#127921;</div>
-          <h3>Spin the Wheel</h3>
-          <p>Spin and win instant point prizes. 3 free spins daily!</p>
-          <span class="game-card-cta">Play Now &rarr;</span>
+        <a href="games/tournament.html" class="game-card">
+          <div class="game-card-icon">&#127942;</div>
+          <h3>Champs League</h3>
+          <p>P2P tournaments with real cash prizes. Compete against players live!</p>
+          <span class="game-card-cta">Join Tournament &rarr;</span>
         </a>
-      </div>
-    </div>
-  </section>
-
-  <!-- Leaderboard Section -->
-  <section id="leaderboard" class="leaderboard-section">
-    <div class="container">
-      <h2 class="section-title">Leaderboard</h2>
-      <p class="section-subtitle">Top earners this week. Will you make the list?</p>
-      <div class="leaderboard-table-wrapper">
-        <table class="leaderboard-table">
-          <thead>
-            <tr>
-              <th>Rank</th>
-              <th>Player</th>
-              <th>Games Played</th>
-              <th>Earnings</th>
-            </tr>
-          </thead>
-          <tbody id="leaderboard-body">
-            <!-- Populated by JS -->
-          </tbody>
-        </table>
       </div>
     </div>
   </section>
@@ -216,9 +163,10 @@
       <div class="footer-links">
         <div class="footer-col">
           <h4>Product</h4>
-          <a href="#features">Features</a>
-          <a href="#play">Games</a>
-          <a href="#leaderboard">Leaderboard</a>
+          <a href="games/reveal.html">Games</a>
+          <a href="games/tournament.html">Tournaments</a>
+          <a href="games/subscription.html">Subscriptions</a>
+          <a href="games/withdraw.html">Withdrawals</a>
         </div>
         <div class="footer-col">
           <h4>Company</h4>
@@ -322,8 +270,6 @@
   </div>
 
   <script src="js/auth.js"></script>
-  <script src="js/wheel.js"></script>
-  <script src="js/leaderboard.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>
