@@ -1,99 +1,5 @@
 const RevealGame = (() => {
-  // Celebrity data - images fetched from Wikipedia API at runtime
-  const celebrities = [
-    {
-      name: "Dwayne Johnson",
-      aliases: ["the rock", "dwayne", "rock"],
-      wiki: "Dwayne_Johnson",
-      hint: "Known for wrestling and action movies",
-    },
-    {
-      name: "Taylor Swift",
-      aliases: ["taylor", "swift"],
-      wiki: "Taylor_Swift",
-      hint: "Pop superstar who started in country music",
-    },
-    {
-      name: "Leonardo DiCaprio",
-      aliases: ["leonardo", "dicaprio", "leo dicaprio"],
-      wiki: "Leonardo_DiCaprio",
-      hint: "Oscar winner, starred in Titanic",
-    },
-    {
-      name: "Beyonce",
-      aliases: ["beyonce", "beyoncé", "queen bey"],
-      wiki: "Beyonc%C3%A9",
-      hint: "Former Destiny's Child member, 'Single Ladies' singer",
-    },
-    {
-      name: "Cristiano Ronaldo",
-      aliases: ["ronaldo", "cristiano", "cr7"],
-      wiki: "Cristiano_Ronaldo",
-      hint: "Portuguese soccer legend, known as CR7",
-    },
-    {
-      name: "Oprah Winfrey",
-      aliases: ["oprah", "winfrey"],
-      wiki: "Oprah_Winfrey",
-      hint: "Talk show queen turned media mogul",
-    },
-    {
-      name: "Tom Cruise",
-      aliases: ["cruise", "tom"],
-      wiki: "Tom_Cruise",
-      hint: "Mission Impossible star, known for doing own stunts",
-    },
-    {
-      name: "Elon Musk",
-      aliases: ["elon", "musk"],
-      wiki: "Elon_Musk",
-      hint: "CEO of Tesla and SpaceX",
-    },
-    {
-      name: "Rihanna",
-      aliases: ["rihanna", "riri"],
-      wiki: "Rihanna",
-      hint: "Barbadian singer and Fenty Beauty founder",
-    },
-    {
-      name: "Lionel Messi",
-      aliases: ["messi", "lionel", "leo messi"],
-      wiki: "Lionel_Messi",
-      hint: "Argentine soccer star, World Cup winner 2022",
-    },
-    {
-      name: "Ariana Grande",
-      aliases: ["ariana", "grande"],
-      wiki: "Ariana_Grande",
-      hint: "Pop singer known for 'Thank U, Next'",
-    },
-    {
-      name: "Morgan Freeman",
-      aliases: ["morgan", "freeman"],
-      wiki: "Morgan_Freeman",
-      hint: "Iconic voice, starred in Shawshank Redemption",
-    },
-    {
-      name: "Kim Kardashian",
-      aliases: ["kim", "kardashian", "kim k"],
-      wiki: "Kim_Kardashian",
-      hint: "Reality TV star and business mogul",
-    },
-    {
-      name: "Will Smith",
-      aliases: ["will", "smith", "fresh prince"],
-      wiki: "Will_Smith",
-      hint: "Fresh Prince of Bel-Air star",
-    },
-    {
-      name: "Selena Gomez",
-      aliases: ["selena", "gomez"],
-      wiki: "Selena_Gomez",
-      hint: "Singer, actress, and Rare Beauty founder",
-    },
-  ];
-
-  const GRID_SIZE = 5; // 5x5 grid = 25 tiles
+  const GRID_SIZE = 5;
   const TOTAL_TILES = GRID_SIZE * GRID_SIZE;
   const TILES_PER_REVEAL = 3;
   const MAX_POINTS = 500;
@@ -103,16 +9,15 @@ const RevealGame = (() => {
   let totalScore = 0;
   let tilesRemaining = TOTAL_TILES;
   let revealedTiles = new Set();
-  let currentCelebrity = null;
+  let currentItem = null;
   let gameOrder = [];
   let correctCount = 0;
   let skippedCount = 0;
   let wrongCount = 0;
   let hintShown = false;
+  let category = null;
 
-  // Fetch image URL from Wikipedia MediaWiki API (CORS-friendly with origin=*)
   async function fetchWikiImage(wikiTitle) {
-    // Method 1: MediaWiki API with explicit CORS support
     try {
       const apiUrl = `https://en.wikipedia.org/w/api.php?action=query&titles=${wikiTitle}&prop=pageimages&format=json&pithumbsize=500&origin=*`;
       const res = await fetch(apiUrl);
@@ -128,7 +33,6 @@ const RevealGame = (() => {
       console.warn("MediaWiki API failed for", wikiTitle, e);
     }
 
-    // Method 2: REST API fallback
     try {
       const restUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${wikiTitle}`;
       const res = await fetch(restUrl);
@@ -146,9 +50,26 @@ const RevealGame = (() => {
   }
 
   function init() {
+    // Determine category from URL param
+    const params = new URLSearchParams(window.location.search);
+    const catId = params.get("category") || "celebrities";
+
+    if (typeof GameCategories !== "undefined" && GameCategories[catId]) {
+      category = GameCategories[catId];
+    } else {
+      category = GameCategories ? GameCategories.celebrities : null;
+    }
+
+    if (category) {
+      document.getElementById("category-title").textContent = category.title;
+      document.getElementById("category-desc").textContent =
+        `Guess the ${category.itemLabel.toLowerCase()} behind the tiles. The fewer tiles you reveal, the more points you earn!`;
+      document.title = `Reveal ${category.title} - WinEarnMoney`;
+    }
+
     document.getElementById("reveal-btn").addEventListener("click", revealTiles);
     document.getElementById("guess-btn").addEventListener("click", submitGuess);
-    document.getElementById("skip-btn").addEventListener("click", skipCelebrity);
+    document.getElementById("skip-btn").addEventListener("click", skipItem);
     document.getElementById("next-btn").addEventListener("click", nextRound);
     document.getElementById("play-again-btn").addEventListener("click", startNewGame);
 
@@ -166,8 +87,8 @@ const RevealGame = (() => {
     skippedCount = 0;
     wrongCount = 0;
 
-    // Shuffle and pick ROUNDS celebrities
-    gameOrder = shuffleArray([...celebrities]).slice(0, ROUNDS);
+    const data = category ? category.data : [];
+    gameOrder = shuffleArray([...data]).slice(0, ROUNDS);
 
     document.getElementById("game-over").classList.add("hidden");
     document.getElementById("total-score").textContent = "0";
@@ -181,7 +102,7 @@ const RevealGame = (() => {
       return;
     }
 
-    currentCelebrity = gameOrder[currentRound];
+    currentItem = gameOrder[currentRound];
     tilesRemaining = TOTAL_TILES;
     revealedTiles = new Set();
     hintShown = false;
@@ -191,26 +112,23 @@ const RevealGame = (() => {
     document.getElementById("tiles-left").textContent = TOTAL_TILES;
     document.getElementById("potential-points").textContent = MAX_POINTS;
     document.getElementById("guess-input").value = "";
+    document.getElementById("guess-input").placeholder = `Type ${(category ? category.itemLabel : "answer").toLowerCase()} name...`;
     document.getElementById("hint-text").textContent = "Loading image...";
     document.getElementById("reveal-btn").disabled = true;
     document.getElementById("guess-btn").disabled = true;
     document.getElementById("skip-btn").disabled = true;
     document.getElementById("guess-input").disabled = true;
 
-    // Build tile grid first (covers the image area)
     buildTileGrid();
 
-    // Fetch and load image from Wikipedia
     const img = document.getElementById("celebrity-image");
     img.style.background = "";
-    const imageUrl = await fetchWikiImage(currentCelebrity.wiki);
+    const imageUrl = await fetchWikiImage(currentItem.wiki);
 
     if (imageUrl) {
-      // Set handlers before src to catch the load event
       await new Promise((resolve) => {
         img.onload = resolve;
         img.onerror = () => {
-          console.warn("Image failed to load:", imageUrl);
           showFallbackImage(img);
           resolve();
         };
@@ -220,27 +138,6 @@ const RevealGame = (() => {
       showFallbackImage(img);
     }
 
-    function showFallbackImage(imgEl) {
-      // Draw a placeholder on a canvas and use as image source
-      const canvas = document.createElement("canvas");
-      canvas.width = 500;
-      canvas.height = 500;
-      const ctx = canvas.getContext("2d");
-      const hue = Math.floor(Math.random() * 360);
-      const gradient = ctx.createLinearGradient(0, 0, 500, 500);
-      gradient.addColorStop(0, `hsl(${hue}, 50%, 25%)`);
-      gradient.addColorStop(1, `hsl(${(hue + 60) % 360}, 50%, 15%)`);
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, 500, 500);
-      ctx.fillStyle = "rgba(255,255,255,0.15)";
-      ctx.font = "bold 80px sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("?", 250, 250);
-      imgEl.src = canvas.toDataURL();
-    }
-
-    // Enable controls after image loads
     document.getElementById("hint-text").textContent = 'Click "Reveal Tiles" to start!';
     document.getElementById("reveal-btn").disabled = false;
     document.getElementById("guess-btn").disabled = false;
@@ -248,6 +145,25 @@ const RevealGame = (() => {
     document.getElementById("guess-input").disabled = false;
 
     currentRound++;
+  }
+
+  function showFallbackImage(imgEl) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 500;
+    canvas.height = 500;
+    const ctx = canvas.getContext("2d");
+    const hue = Math.floor(Math.random() * 360);
+    const gradient = ctx.createLinearGradient(0, 0, 500, 500);
+    gradient.addColorStop(0, `hsl(${hue}, 50%, 25%)`);
+    gradient.addColorStop(1, `hsl(${(hue + 60) % 360}, 50%, 15%)`);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 500, 500);
+    ctx.fillStyle = "rgba(255,255,255,0.15)";
+    ctx.font = "bold 80px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("?", 250, 250);
+    imgEl.src = canvas.toDataURL();
   }
 
   function buildTileGrid() {
@@ -272,32 +188,25 @@ const RevealGame = (() => {
 
     if (unrevealed.length === 0) return;
 
-    // Shuffle unrevealed and pick some
     const toReveal = shuffleArray(unrevealed).slice(0, TILES_PER_REVEAL);
 
     toReveal.forEach((index) => {
       revealedTiles.add(index);
       const tile = document.querySelector(`.tile[data-index="${index}"]`);
-      if (tile) {
-        tile.classList.add("revealed");
-      }
+      if (tile) tile.classList.add("revealed");
     });
 
     tilesRemaining = TOTAL_TILES - revealedTiles.size;
-    const potentialPoints = calculatePoints();
-
     document.getElementById("tiles-left").textContent = tilesRemaining;
-    document.getElementById("potential-points").textContent = potentialPoints;
+    document.getElementById("potential-points").textContent = calculatePoints();
 
-    // Show hint after revealing half
     if (!hintShown && revealedTiles.size >= Math.floor(TOTAL_TILES / 2)) {
-      document.getElementById("hint-text").textContent = currentCelebrity.hint;
+      document.getElementById("hint-text").textContent = currentItem.hint;
       hintShown = true;
     } else if (!hintShown) {
       document.getElementById("hint-text").textContent = "Keep revealing to get a hint...";
     }
 
-    // If all tiles revealed
     if (tilesRemaining === 0) {
       document.getElementById("reveal-btn").disabled = true;
     }
@@ -317,8 +226,8 @@ const RevealGame = (() => {
 
     if (!guess) return;
 
-    const correctName = currentCelebrity.name.toLowerCase();
-    const aliases = currentCelebrity.aliases.map((a) => a.toLowerCase());
+    const correctName = currentItem.name.toLowerCase();
+    const aliases = currentItem.aliases.map((a) => a.toLowerCase());
 
     const isCorrect =
       guess === correctName || aliases.some((alias) => guess.includes(alias) || alias.includes(guess));
@@ -334,33 +243,32 @@ const RevealGame = (() => {
     }
   }
 
-  function skipCelebrity() {
+  function skipItem() {
     totalScore = Math.max(0, totalScore - 50);
     skippedCount++;
     showResult(false, -50, true);
   }
 
   function showResult(correct, points, skipped = false) {
-    // Reveal all tiles
     for (let i = 0; i < TOTAL_TILES; i++) {
       const tile = document.querySelector(`.tile[data-index="${i}"]`);
       if (tile) tile.classList.add("revealed");
     }
 
-    // Disable controls
     document.getElementById("reveal-btn").disabled = true;
     document.getElementById("guess-btn").disabled = true;
     document.getElementById("skip-btn").disabled = true;
     document.getElementById("guess-input").disabled = true;
 
-    // Show result overlay
     const overlay = document.getElementById("result-overlay");
     overlay.classList.remove("hidden");
+
+    const itemLabel = category ? category.itemLabel : "answer";
 
     if (correct) {
       document.getElementById("result-icon").textContent = "\uD83C\uDF89";
       document.getElementById("result-title").textContent = "Correct!";
-      document.getElementById("result-message").textContent = "Great job! You recognized them!";
+      document.getElementById("result-message").textContent = "Great job! You got it!";
       document.getElementById("result-points").textContent = `+${points} points`;
       document.getElementById("result-points").className = "result-points points-positive";
     } else if (skipped) {
@@ -372,23 +280,17 @@ const RevealGame = (() => {
     } else {
       document.getElementById("result-icon").textContent = "\u274C";
       document.getElementById("result-title").textContent = "Wrong!";
-      document.getElementById("result-message").textContent = "That's not who it is.";
+      document.getElementById("result-message").textContent = `That's not the right ${itemLabel.toLowerCase()}.`;
       document.getElementById("result-points").textContent = "+0 points";
       document.getElementById("result-points").className = "result-points";
     }
 
-    document.getElementById("result-answer").textContent = currentCelebrity.name;
+    document.getElementById("result-answer").textContent = currentItem.name;
     document.getElementById("total-score").textContent = totalScore;
 
-    // Update next button text
     const nextBtn = document.getElementById("next-btn");
-    if (currentRound >= gameOrder.length) {
-      nextBtn.textContent = "See Results";
-    } else {
-      nextBtn.textContent = "Next Celebrity";
-    }
+    nextBtn.textContent = currentRound >= gameOrder.length ? "See Results" : `Next ${itemLabel}`;
 
-    // Award points if logged in
     if (correct && points > 0 && typeof Auth !== "undefined" && Auth.isLoggedIn()) {
       Auth.addPoints(points);
     }
