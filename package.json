@@ -1,0 +1,13 @@
+{
+  "name": "winearnmoney",
+  "version": "0.1.0",
+  "description": "A fun game where you can win and earn money",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node src/index.js",
+    "build": "echo 'No build step configured yet'",
+    "test": "echo 'No tests configured yet' && exit 0"
+  },
+  "keywords": ["game", "earn", "money"],
+  "license": "MIT"
+}
