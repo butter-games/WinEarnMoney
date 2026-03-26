@@ -131,6 +131,11 @@ const WheelGame = (() => {
 
     document.getElementById("result-text").textContent = winner.label;
     document.getElementById("result-display").classList.remove("hidden");
+
+    // Award points if logged in
+    if (typeof Auth !== "undefined" && Auth.isLoggedIn()) {
+      Auth.addPoints(winner.value);
+    }
   }
 
   return { init };

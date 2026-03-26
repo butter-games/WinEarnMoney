@@ -18,7 +18,19 @@
         <li><a href="#play">Play Now</a></li>
         <li><a href="#leaderboard">Leaderboard</a></li>
       </ul>
-      <button class="btn btn-primary nav-cta">Sign Up Free</button>
+      <div class="nav-auth">
+        <button class="btn btn-outline nav-login" onclick="Auth.showModal('login')">Log In</button>
+        <button class="btn btn-primary nav-cta" onclick="Auth.showModal('signup')">Sign Up Free</button>
+      </div>
+      <div class="nav-user hidden" id="nav-user">
+        <span class="user-points" id="nav-points">0 pts</span>
+        <div class="user-avatar" id="nav-avatar" onclick="Auth.toggleUserMenu()"></div>
+        <div class="user-menu hidden" id="user-menu">
+          <div class="user-menu-header" id="user-menu-name"></div>
+          <a href="#" onclick="Auth.showProfile(); return false;">My Profile</a>
+          <a href="#" onclick="Auth.logout(); return false;">Log Out</a>
+        </div>
+      </div>
       <button class="mobile-menu-btn" aria-label="Toggle menu">&#9776;</button>
     </div>
   </nav>
@@ -29,7 +41,7 @@
       <h1>Play Games.<br><span class="highlight">Win Real Rewards.</span></h1>
       <p class="hero-subtitle">Spin the wheel, complete challenges, and climb the leaderboard. Your next win is just a click away.</p>
       <div class="hero-buttons">
-        <a href="#play" class="btn btn-primary btn-lg">Start Playing</a>
+        <a href="#play" class="btn btn-primary btn-lg" id="hero-cta" onclick="Auth.handlePlayClick(event)">Start Playing</a>
         <a href="#how-it-works" class="btn btn-outline btn-lg">Learn More</a>
       </div>
       <div class="hero-stats">
@@ -159,7 +171,7 @@
     <div class="container">
       <h2>Ready to Start Winning?</h2>
       <p>Join thousands of players already earning rewards every day.</p>
-      <button class="btn btn-primary btn-lg">Create Free Account</button>
+      <button class="btn btn-primary btn-lg" id="cta-btn" onclick="Auth.showModal('signup')">Create Free Account</button>
     </div>
   </section>
 
@@ -198,6 +210,87 @@
     </div>
   </footer>
 
+  <!-- Auth Modal -->
+  <div class="modal-overlay hidden" id="auth-modal">
+    <div class="modal">
+      <button class="modal-close" onclick="Auth.hideModal()">&times;</button>
+
+      <!-- Login Form -->
+      <div id="login-form" class="auth-form">
+        <h2>Welcome Back</h2>
+        <p class="auth-subtitle">Log in to continue playing and earning.</p>
+        <form onsubmit="Auth.login(event)">
+          <div class="form-group">
+            <label for="login-email">Email</label>
+            <input type="email" id="login-email" placeholder="you@example.com" required>
+          </div>
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" placeholder="Your password" required minlength="6">
+          </div>
+          <div id="login-error" class="form-error hidden"></div>
+          <button type="submit" class="btn btn-primary btn-lg btn-full">Log In</button>
+        </form>
+        <p class="auth-switch">Don't have an account? <a href="#" onclick="Auth.switchForm('signup'); return false;">Sign up</a></p>
+      </div>
+
+      <!-- Signup Form -->
+      <div id="signup-form" class="auth-form hidden">
+        <h2>Create Account</h2>
+        <p class="auth-subtitle">Join for free and start winning today.</p>
+        <form onsubmit="Auth.signup(event)">
+          <div class="form-group">
+            <label for="signup-name">Username</label>
+            <input type="text" id="signup-name" placeholder="Choose a username" required minlength="3" maxlength="20">
+          </div>
+          <div class="form-group">
+            <label for="signup-email">Email</label>
+            <input type="email" id="signup-email" placeholder="you@example.com" required>
+          </div>
+          <div class="form-group">
+            <label for="signup-password">Password</label>
+            <input type="password" id="signup-password" placeholder="Min 6 characters" required minlength="6">
+          </div>
+          <div class="form-group">
+            <label for="signup-confirm">Confirm Password</label>
+            <input type="password" id="signup-confirm" placeholder="Repeat password" required minlength="6">
+          </div>
+          <div id="signup-error" class="form-error hidden"></div>
+          <button type="submit" class="btn btn-primary btn-lg btn-full">Create Account</button>
+        </form>
+        <p class="auth-switch">Already have an account? <a href="#" onclick="Auth.switchForm('login'); return false;">Log in</a></p>
+      </div>
+
+      <!-- Profile View -->
+      <div id="profile-view" class="auth-form hidden">
+        <h2>My Profile</h2>
+        <div class="profile-card">
+          <div class="profile-avatar" id="profile-avatar"></div>
+          <div class="profile-info">
+            <h3 id="profile-name"></h3>
+            <p id="profile-email"></p>
+          </div>
+        </div>
+        <div class="profile-stats">
+          <div class="profile-stat">
+            <span class="profile-stat-value" id="profile-points">0</span>
+            <span class="profile-stat-label">Points</span>
+          </div>
+          <div class="profile-stat">
+            <span class="profile-stat-value" id="profile-games">0</span>
+            <span class="profile-stat-label">Games Played</span>
+          </div>
+          <div class="profile-stat">
+            <span class="profile-stat-value" id="profile-joined"></span>
+            <span class="profile-stat-label">Member Since</span>
+          </div>
+        </div>
+        <button class="btn btn-outline btn-full" onclick="Auth.hideModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/auth.js"></script>
   <script src="js/wheel.js"></script>
   <script src="js/leaderboard.js"></script>
   <script src="js/main.js"></script>
