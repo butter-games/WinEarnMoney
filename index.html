@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WinEarnMoney - Play Games, Win Rewards!</title>
+  <meta name="description" content="Play exciting games and earn real rewards. Spin the wheel, compete on leaderboards, and win big!">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container navbar-content">
+      <a href="#" class="logo">Win<span>Earn</span>Money</a>
+      <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#play">Play Now</a></li>
+        <li><a href="#leaderboard">Leaderboard</a></li>
+      </ul>
+      <button class="btn btn-primary nav-cta">Sign Up Free</button>
+      <button class="mobile-menu-btn" aria-label="Toggle menu">&#9776;</button>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container hero-content">
+      <h1>Play Games.<br><span class="highlight">Win Real Rewards.</span></h1>
+      <p class="hero-subtitle">Spin the wheel, complete challenges, and climb the leaderboard. Your next win is just a click away.</p>
+      <div class="hero-buttons">
+        <a href="#play" class="btn btn-primary btn-lg">Start Playing</a>
+        <a href="#how-it-works" class="btn btn-outline btn-lg">Learn More</a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat">
+          <span class="stat-number">10K+</span>
+          <span class="stat-label">Active Players</span>
+        </div>
+        <div class="stat">
+          <span class="stat-number">$50K+</span>
+          <span class="stat-label">Rewards Given</span>
+        </div>
+        <div class="stat">
+          <span class="stat-number">100K+</span>
+          <span class="stat-label">Games Played</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="features">
+    <div class="container">
+      <h2 class="section-title">Why Players Love Us</h2>
+      <p class="section-subtitle">Simple, fun, and rewarding. Here's what makes WinEarnMoney special.</p>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">&#127922;</div>
+          <h3>Fun Games</h3>
+          <p>Exciting games designed to keep you entertained while earning rewards.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#128176;</div>
+          <h3>Real Rewards</h3>
+          <p>Earn points and convert them to real money or gift cards.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#9889;</div>
+          <h3>Instant Payouts</h3>
+          <p>Cash out your winnings quickly with our fast payout system.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#128272;</div>
+          <h3>Safe &amp; Secure</h3>
+          <p>Your data and earnings are protected with top-tier security.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section id="how-it-works" class="how-it-works">
+    <div class="container">
+      <h2 class="section-title">How It Works</h2>
+      <p class="section-subtitle">Start earning in three simple steps.</p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <h3>Sign Up</h3>
+          <p>Create your free account in seconds. No credit card required.</p>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <h3>Play Games</h3>
+          <p>Spin the wheel, answer trivia, and complete daily challenges.</p>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <h3>Earn Rewards</h3>
+          <p>Accumulate points and cash out to your preferred payment method.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Play Section - Spin the Wheel -->
+  <section id="play" class="play-section">
+    <div class="container">
+      <h2 class="section-title">Try Your Luck!</h2>
+      <p class="section-subtitle">Give the wheel a spin and see what you can win.</p>
+      <div class="game-area">
+        <div class="wheel-container">
+          <div class="wheel-pointer">&#9660;</div>
+          <canvas id="wheel-canvas" width="400" height="400"></canvas>
+        </div>
+        <div class="game-controls">
+          <button id="spin-btn" class="btn btn-primary btn-lg spin-btn">Spin the Wheel!</button>
+          <div id="result-display" class="result-display hidden">
+            <p>You won:</p>
+            <span id="result-text" class="result-text"></span>
+          </div>
+          <div class="spins-remaining">
+            <span>Daily spins remaining: </span>
+            <span id="spins-count" class="spins-count">3</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Leaderboard Section -->
+  <section id="leaderboard" class="leaderboard-section">
+    <div class="container">
+      <h2 class="section-title">Leaderboard</h2>
+      <p class="section-subtitle">Top earners this week. Will you make the list?</p>
+      <div class="leaderboard-table-wrapper">
+        <table class="leaderboard-table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Player</th>
+              <th>Games Played</th>
+              <th>Earnings</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboard-body">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="container">
+      <h2>Ready to Start Winning?</h2>
+      <p>Join thousands of players already earning rewards every day.</p>
+      <button class="btn btn-primary btn-lg">Create Free Account</button>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer-content">
+      <div class="footer-brand">
+        <a href="#" class="logo">Win<span>Earn</span>Money</a>
+        <p>Play games, earn rewards, have fun.</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>Product</h4>
+          <a href="#features">Features</a>
+          <a href="#play">Games</a>
+          <a href="#leaderboard">Leaderboard</a>
+        </div>
+        <div class="footer-col">
+          <h4>Company</h4>
+          <a href="#">About</a>
+          <a href="#">Careers</a>
+          <a href="#">Contact</a>
+        </div>
+        <div class="footer-col">
+          <h4>Legal</h4>
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Service</a>
+          <a href="#">Cookie Policy</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="container">
+        <p>&copy; 2026 WinEarnMoney. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/wheel.js"></script>
+  <script src="js/leaderboard.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

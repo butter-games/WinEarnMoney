@@ -2,10 +2,10 @@
   "name": "winearnmoney",
   "version": "0.1.0",
   "description": "A fun game where you can win and earn money",
-  "main": "src/index.js",
+  "main": "index.html",
   "scripts": {
-    "dev": "node src/index.js",
-    "build": "echo 'No build step configured yet'",
+    "dev": "npx serve .",
+    "build": "echo 'Static site - no build step needed'",
     "test": "echo 'No tests configured yet' && exit 0"
   },
   "keywords": ["game", "earn", "money"],
