@@ -433,6 +433,11 @@ a {
   margin: 0 auto;
 }
 
+.games-grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 960px;
+}
+
 .game-card {
   position: relative;
   background: var(--dark-surface);
@@ -991,7 +996,8 @@ a {
     font-size: 2rem;
   }
 
-  .games-grid {
+  .games-grid,
+  .games-grid-3 {
     grid-template-columns: 1fr;
   }
 }
