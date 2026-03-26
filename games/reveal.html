@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reveal the Celebrity - WinEarnMoney</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/reveal-game.css">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container navbar-content">
+      <a href="../index.html" class="logo">Win<span>Earn</span>Money</a>
+      <ul class="nav-links">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../index.html#play">Spin the Wheel</a></li>
+        <li><a href="#" class="active">Reveal Celebrity</a></li>
+        <li><a href="../index.html#leaderboard">Leaderboard</a></li>
+      </ul>
+      <div class="nav-auth">
+        <button class="btn btn-outline nav-login" onclick="Auth.showModal('login')">Log In</button>
+        <button class="btn btn-primary nav-cta" onclick="Auth.showModal('signup')">Sign Up Free</button>
+      </div>
+      <div class="nav-user hidden" id="nav-user">
+        <span class="user-points" id="nav-points">0 pts</span>
+        <div class="user-avatar" id="nav-avatar" onclick="Auth.toggleUserMenu()"></div>
+        <div class="user-menu hidden" id="user-menu">
+          <div class="user-menu-header" id="user-menu-name"></div>
+          <a href="#" onclick="Auth.showProfile(); return false;">My Profile</a>
+          <a href="#" onclick="Auth.logout(); return false;">Log Out</a>
+        </div>
+      </div>
+      <button class="mobile-menu-btn" aria-label="Toggle menu">&#9776;</button>
+    </div>
+  </nav>
+
+  <!-- Game Section -->
+  <section class="reveal-game-section">
+    <div class="container">
+      <div class="game-header">
+        <h1>Reveal the <span class="highlight">Celebrity</span></h1>
+        <p class="game-description">Guess the celebrity behind the tiles. The fewer tiles you reveal, the more points you earn!</p>
+      </div>
+
+      <div class="game-board">
+        <!-- Score and Round Info -->
+        <div class="game-info-bar">
+          <div class="info-item">
+            <span class="info-label">Round</span>
+            <span class="info-value" id="round-number">1 / 10</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Tiles Left</span>
+            <span class="info-value" id="tiles-left">25</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Potential Points</span>
+            <span class="info-value points-value" id="potential-points">500</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Score</span>
+            <span class="info-value score-value" id="total-score">0</span>
+          </div>
+        </div>
+
+        <!-- Image with Tile Overlay -->
+        <div class="reveal-area">
+          <div class="image-container" id="image-container">
+            <img id="celebrity-image" alt="Celebrity" crossorigin="anonymous">
+            <div class="tile-grid" id="tile-grid"></div>
+          </div>
+
+          <!-- Hint Area -->
+          <div class="hint-area">
+            <div class="hint-box" id="hint-box">
+              <span class="hint-label">Hint:</span>
+              <span class="hint-text" id="hint-text">Click "Reveal Tiles" to start!</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="game-controls-panel">
+          <button id="reveal-btn" class="btn btn-primary btn-lg reveal-btn">
+            Reveal 3 Tiles
+          </button>
+
+          <div class="guess-area">
+            <input type="text" id="guess-input" class="guess-input" placeholder="Type celebrity name..." autocomplete="off">
+            <button id="guess-btn" class="btn btn-primary guess-btn">Guess</button>
+          </div>
+
+          <button id="skip-btn" class="btn btn-outline skip-btn">Skip (-50 pts)</button>
+        </div>
+
+        <!-- Result Overlay -->
+        <div class="result-overlay hidden" id="result-overlay">
+          <div class="result-card">
+            <div class="result-icon" id="result-icon"></div>
+            <h2 id="result-title"></h2>
+            <p id="result-message"></p>
+            <div class="result-answer">
+              <span>It was:</span>
+              <strong id="result-answer"></strong>
+            </div>
+            <div class="result-points" id="result-points"></div>
+            <button class="btn btn-primary btn-lg" id="next-btn">Next Celebrity</button>
+          </div>
+        </div>
+
+        <!-- Game Over -->
+        <div class="game-over-overlay hidden" id="game-over">
+          <div class="result-card game-over-card">
+            <h2>Game Over!</h2>
+            <div class="final-score">
+              <span class="final-score-label">Final Score</span>
+              <span class="final-score-value" id="final-score">0</span>
+            </div>
+            <div class="game-over-stats">
+              <div class="go-stat">
+                <span class="go-stat-value" id="correct-count">0</span>
+                <span class="go-stat-label">Correct</span>
+              </div>
+              <div class="go-stat">
+                <span class="go-stat-value" id="skipped-count">0</span>
+                <span class="go-stat-label">Skipped</span>
+              </div>
+              <div class="go-stat">
+                <span class="go-stat-value" id="wrong-count">0</span>
+                <span class="go-stat-label">Wrong</span>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-lg" id="play-again-btn">Play Again</button>
+            <a href="../index.html" class="btn btn-outline btn-lg">Back to Home</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Auth Modal (same as main page) -->
+  <div class="modal-overlay hidden" id="auth-modal">
+    <div class="modal">
+      <button class="modal-close" onclick="Auth.hideModal()">&times;</button>
+      <div id="login-form" class="auth-form">
+        <h2>Welcome Back</h2>
+        <p class="auth-subtitle">Log in to continue playing and earning.</p>
+        <form onsubmit="Auth.login(event)">
+          <div class="form-group">
+            <label for="login-email">Email</label>
+            <input type="email" id="login-email" placeholder="you@example.com" required>
+          </div>
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" placeholder="Your password" required minlength="6">
+          </div>
+          <div id="login-error" class="form-error hidden"></div>
+          <button type="submit" class="btn btn-primary btn-lg btn-full">Log In</button>
+        </form>
+        <p class="auth-switch">Don't have an account? <a href="#" onclick="Auth.switchForm('signup'); return false;">Sign up</a></p>
+      </div>
+      <div id="signup-form" class="auth-form hidden">
+        <h2>Create Account</h2>
+        <p class="auth-subtitle">Join for free and start winning today.</p>
+        <form onsubmit="Auth.signup(event)">
+          <div class="form-group">
+            <label for="signup-name">Username</label>
+            <input type="text" id="signup-name" placeholder="Choose a username" required minlength="3" maxlength="20">
+          </div>
+          <div class="form-group">
+            <label for="signup-email">Email</label>
+            <input type="email" id="signup-email" placeholder="you@example.com" required>
+          </div>
+          <div class="form-group">
+            <label for="signup-password">Password</label>
+            <input type="password" id="signup-password" placeholder="Min 6 characters" required minlength="6">
+          </div>
+          <div class="form-group">
+            <label for="signup-confirm">Confirm Password</label>
+            <input type="password" id="signup-confirm" placeholder="Repeat password" required minlength="6">
+          </div>
+          <div id="signup-error" class="form-error hidden"></div>
+          <button type="submit" class="btn btn-primary btn-lg btn-full">Create Account</button>
+        </form>
+        <p class="auth-switch">Already have an account? <a href="#" onclick="Auth.switchForm('login'); return false;">Log in</a></p>
+      </div>
+      <div id="profile-view" class="auth-form hidden">
+        <h2>My Profile</h2>
+        <div class="profile-card">
+          <div class="profile-avatar" id="profile-avatar"></div>
+          <div class="profile-info">
+            <h3 id="profile-name"></h3>
+            <p id="profile-email"></p>
+          </div>
+        </div>
+        <div class="profile-stats">
+          <div class="profile-stat">
+            <span class="profile-stat-value" id="profile-points">0</span>
+            <span class="profile-stat-label">Points</span>
+          </div>
+          <div class="profile-stat">
+            <span class="profile-stat-value" id="profile-games">0</span>
+            <span class="profile-stat-label">Games Played</span>
+          </div>
+          <div class="profile-stat">
+            <span class="profile-stat-value" id="profile-joined"></span>
+            <span class="profile-stat-label">Member Since</span>
+          </div>
+        </div>
+        <button class="btn btn-outline btn-full" onclick="Auth.hideModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/auth.js"></script>
+  <script src="../js/reveal-game.js"></script>
+</body>
+</html>
