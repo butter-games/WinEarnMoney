@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subscribe - WinEarnMoney</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/subscription.css">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container navbar-content">
+      <a href="../index.html" class="logo">Win<span>Earn</span>Money</a>
+      <ul class="nav-links">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="tournament.html">Tournaments</a></li>
+        <li><a href="#" class="active">Subscribe</a></li>
+      </ul>
+      <div class="nav-auth">
+        <button class="btn btn-outline nav-login" onclick="Auth.showModal('login')">Log In</button>
+        <button class="btn btn-primary nav-cta" onclick="Auth.showModal('signup')">Sign Up Free</button>
+      </div>
+      <div class="nav-user hidden" id="nav-user">
+        <span class="user-points" id="nav-points">0 pts</span>
+        <div class="user-avatar" id="nav-avatar" onclick="Auth.toggleUserMenu()"></div>
+        <div class="user-menu hidden" id="user-menu">
+          <div class="user-menu-header" id="user-menu-name"></div>
+          <a href="#" onclick="Auth.showProfile(); return false;">My Profile</a>
+          <a href="#" onclick="Auth.logout(); return false;">Log Out</a>
+        </div>
+      </div>
+      <button class="mobile-menu-btn" aria-label="Toggle menu">&#9776;</button>
+    </div>
+  </nav>
+
+  <section class="subscription-page">
+    <div class="container">
+      <div class="sub-page-header">
+        <h1>Go <span class="highlight">Pro</span></h1>
+        <p>Unlock all contests and maximize your earnings</p>
+      </div>
+
+      <!-- Feature Highlights -->
+      <div class="sub-features">
+        <div class="sub-feature">
+          <div class="sub-feature-icon" style="background: #e67e22;">&#127942;</div>
+          <div>
+            <h3>Hourly Contests</h3>
+            <p>New tournaments every hour, 4 per day</p>
+          </div>
+        </div>
+        <div class="sub-feature">
+          <div class="sub-feature-icon" style="background: #27ae60;">&#128176;</div>
+          <div>
+            <h3>Unlimited Winnings</h3>
+            <p>No cap on how much you can earn</p>
+          </div>
+        </div>
+        <div class="sub-feature">
+          <div class="sub-feature-icon" style="background: #e84393;">&#128179;</div>
+          <div>
+            <h3>Unlimited Withdrawal</h3>
+            <p>Cash out anytime, no minimum</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pricing Cards -->
+      <div class="pricing-grid">
+        <div class="pricing-card">
+          <h3>Free</h3>
+          <div class="pricing-amount">
+            <span class="pricing-dollar">$0</span>
+            <span class="pricing-period">/month</span>
+          </div>
+          <ul class="pricing-features">
+            <li class="included">2 free contests daily</li>
+            <li class="included">Basic leaderboard</li>
+            <li class="included">Spin the Wheel (3x daily)</li>
+            <li class="excluded">Premium contests</li>
+            <li class="excluded">Unlimited winnings</li>
+            <li class="excluded">Instant withdrawal</li>
+          </ul>
+          <span class="pricing-current">Current Plan</span>
+        </div>
+
+        <div class="pricing-card pricing-featured">
+          <div class="pricing-badge">BEST VALUE</div>
+          <h3>Monthly Pro</h3>
+          <div class="pricing-amount">
+            <span class="pricing-dollar">$1.99</span>
+            <span class="pricing-period">/month</span>
+          </div>
+          <div class="pricing-original">
+            <span>$3.99</span>
+            <span class="pricing-save">Save 50%</span>
+          </div>
+          <ul class="pricing-features">
+            <li class="included">120 contests per month</li>
+            <li class="included">4 contests every day</li>
+            <li class="included">$6,000 monthly prize pool</li>
+            <li class="included">Premium contests access</li>
+            <li class="included">Unlimited winnings</li>
+            <li class="included">Instant withdrawal</li>
+          </ul>
+          <button class="btn btn-primary btn-lg btn-full" id="sub-monthly-btn" onclick="Subscription.subscribe('monthly')">
+            Subscribe - $1.99/month
+          </button>
+        </div>
+
+        <div class="pricing-card">
+          <h3>Annual Pro</h3>
+          <div class="pricing-amount">
+            <span class="pricing-dollar">$14.99</span>
+            <span class="pricing-period">/year</span>
+          </div>
+          <div class="pricing-original">
+            <span>$23.88/yr</span>
+            <span class="pricing-save">Save 37%</span>
+          </div>
+          <ul class="pricing-features">
+            <li class="included">Everything in Monthly</li>
+            <li class="included">Priority tournament entry</li>
+            <li class="included">Exclusive mega contests</li>
+            <li class="included">Early access to new games</li>
+            <li class="included">VIP support</li>
+            <li class="included">$1.25/month effective</li>
+          </ul>
+          <button class="btn btn-outline btn-lg btn-full" onclick="Subscription.subscribe('annual')">
+            Subscribe - $14.99/year
+          </button>
+        </div>
+      </div>
+
+      <!-- FAQ -->
+      <div class="sub-faq">
+        <h2>Frequently Asked Questions</h2>
+        <div class="faq-item">
+          <h4>Can I cancel anytime?</h4>
+          <p>Yes, you can cancel your subscription at any time. Your access continues until the end of the billing period.</p>
+        </div>
+        <div class="faq-item">
+          <h4>How do I withdraw my winnings?</h4>
+          <p>Pro subscribers can withdraw to PayPal, bank transfer, or gift cards with no minimum amount.</p>
+        </div>
+        <div class="faq-item">
+          <h4>Are the tournaments fair?</h4>
+          <p>Absolutely. All players see the same images in the same order. Scoring is based on speed + accuracy.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Success Modal -->
+  <div class="modal-overlay hidden" id="sub-success-modal">
+    <div class="modal">
+      <div class="sub-success">
+        <div class="sub-success-icon">&#127881;</div>
+        <h2>You're Now Pro!</h2>
+        <p>All premium contests are now unlocked. Start competing and winning!</p>
+        <a href="tournament.html" class="btn btn-primary btn-lg btn-full">Go to Tournaments</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auth Modal -->
+  <div class="modal-overlay hidden" id="auth-modal">
+    <div class="modal">
+      <button class="modal-close" onclick="Auth.hideModal()">&times;</button>
+      <div id="login-form" class="auth-form">
+        <h2>Welcome Back</h2>
+        <p class="auth-subtitle">Log in to continue.</p>
+        <form onsubmit="Auth.login(event)">
+          <div class="form-group">
+            <label for="login-email">Email</label>
+            <input type="email" id="login-email" placeholder="you@example.com" required>
+          </div>
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" placeholder="Your password" required minlength="6">
+          </div>
+          <div id="login-error" class="form-error hidden"></div>
+          <button type="submit" class="btn btn-primary btn-lg btn-full">Log In</button>
+        </form>
+        <p class="auth-switch">Don't have an account? <a href="#" onclick="Auth.switchForm('signup'); return false;">Sign up</a></p>
+      </div>
+      <div id="signup-form" class="auth-form hidden">
+        <h2>Create Account</h2>
+        <p class="auth-subtitle">Join for free and start winning today.</p>
+        <form onsubmit="Auth.signup(event)">
+          <div class="form-group">
+            <label for="signup-name">Username</label>
+            <input type="text" id="signup-name" placeholder="Choose a username" required minlength="3" maxlength="20">
+          </div>
+          <div class="form-group">
+            <label for="signup-email">Email</label>
+            <input type="email" id="signup-email" placeholder="you@example.com" required>
+          </div>
+          <div class="form-group">
+            <label for="signup-password">Password</label>
+            <input type="password" id="signup-password" placeholder="Min 6 characters" required minlength="6">
+          </div>
+          <div class="form-group">
+            <label for="signup-confirm">Confirm Password</label>
+            <input type="password" id="signup-confirm" placeholder="Repeat password" required minlength="6">
+          </div>
+          <div id="signup-error" class="form-error hidden"></div>
+          <button type="submit" class="btn btn-primary btn-lg btn-full">Create Account</button>
+        </form>
+        <p class="auth-switch">Already have an account? <a href="#" onclick="Auth.switchForm('login'); return false;">Log in</a></p>
+      </div>
+      <div id="profile-view" class="auth-form hidden">
+        <h2>My Profile</h2>
+        <div class="profile-card">
+          <div class="profile-avatar" id="profile-avatar"></div>
+          <div class="profile-info">
+            <h3 id="profile-name"></h3>
+            <p id="profile-email"></p>
+          </div>
+        </div>
+        <div class="profile-stats">
+          <div class="profile-stat">
+            <span class="profile-stat-value" id="profile-points">0</span>
+            <span class="profile-stat-label">Points</span>
+          </div>
+          <div class="profile-stat">
+            <span class="profile-stat-value" id="profile-games">0</span>
+            <span class="profile-stat-label">Games Played</span>
+          </div>
+          <div class="profile-stat">
+            <span class="profile-stat-value" id="profile-joined"></span>
+            <span class="profile-stat-label">Member Since</span>
+          </div>
+        </div>
+        <button class="btn btn-outline btn-full" onclick="Auth.hideModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/auth.js"></script>
+  <script>
+    const Subscription = {
+      subscribe(plan) {
+        if (!Auth.isLoggedIn()) {
+          Auth.showModal("signup");
+          return;
+        }
+        // Simulate subscription (in production, integrate Stripe/PayPal)
+        const user = Auth.currentUser();
+        user.subscribed = true;
+        user.plan = plan;
+        localStorage.setItem("wem_session", JSON.stringify(user));
+        const users = JSON.parse(localStorage.getItem("wem_users") || "{}");
+        if (users[user.email]) {
+          users[user.email].subscribed = true;
+          users[user.email].plan = plan;
+          localStorage.setItem("wem_users", JSON.stringify(users));
+        }
+        document.getElementById("sub-success-modal").classList.remove("hidden");
+      }
+    };
+  </script>
+</body>
+</html>
