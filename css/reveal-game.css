@@ -21,6 +21,19 @@
   font-size: 1.1rem;
 }
 
+.back-to-games {
+  display: inline-block;
+  margin-top: 12px;
+  color: var(--primary-light);
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: color 0.3s;
+}
+
+.back-to-games:hover {
+  color: var(--accent);
+}
+
 /* Game Info Bar */
 .game-info-bar {
   display: flex;

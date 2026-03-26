@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reveal the Celebrity - WinEarnMoney</title>
+  <title>Reveal Game - WinEarnMoney</title>
   <link rel="stylesheet" href="../css/style.css">
   <link rel="stylesheet" href="../css/reveal-game.css">
 </head>
@@ -14,7 +14,7 @@
       <a href="../index.html" class="logo">Win<span>Earn</span>Money</a>
       <ul class="nav-links">
         <li><a href="../index.html">Home</a></li>
-        <li><a href="reveal.html" class="active">Games</a></li>
+        <li><a href="index.html" class="active">Games</a></li>
         <li><a href="tournament.html">Tournaments</a></li>
         <li><a href="subscription.html">Subscriptions</a></li>
         <li><a href="withdraw.html">Withdrawals</a></li>
@@ -40,8 +40,9 @@
   <section class="reveal-game-section">
     <div class="container">
       <div class="game-header">
-        <h1>Reveal the <span class="highlight">Celebrity</span></h1>
-        <p class="game-description">Guess the celebrity behind the tiles. The fewer tiles you reveal, the more points you earn!</p>
+        <h1>Reveal the <span class="highlight" id="category-title">Celebrity</span></h1>
+        <p class="game-description" id="category-desc">Guess the celebrity behind the tiles. The fewer tiles you reveal, the more points you earn!</p>
+        <a href="index.html" class="back-to-games">&larr; All Games</a>
       </div>
 
       <div class="game-board">
@@ -133,7 +134,7 @@
               </div>
             </div>
             <button class="btn btn-primary btn-lg" id="play-again-btn">Play Again</button>
-            <a href="../index.html" class="btn btn-outline btn-lg">Back to Home</a>
+            <a href="index.html" class="btn btn-outline btn-lg">All Games</a>
           </div>
         </div>
       </div>
@@ -215,6 +216,7 @@
   </div>
 
   <script src="../js/auth.js"></script>
+  <script src="../js/game-categories.js"></script>
   <script src="../js/reveal-game.js"></script>
 </body>
 </html>

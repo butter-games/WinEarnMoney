@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Games - WinEarnMoney</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/games-hub.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container navbar-content">
+      <a href="../index.html" class="logo">Win<span>Earn</span>Money</a>
+      <ul class="nav-links">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html" class="active">Games</a></li>
+        <li><a href="tournament.html">Tournaments</a></li>
+        <li><a href="subscription.html">Subscriptions</a></li>
+        <li><a href="withdraw.html">Withdrawals</a></li>
+      </ul>
+      <div class="nav-auth">
+        <button class="btn btn-outline nav-login" onclick="Auth.showModal('login')">Log In</button>
+        <button class="btn btn-primary nav-cta" onclick="Auth.showModal('signup')">Sign Up Free</button>
+      </div>
+      <div class="nav-user hidden" id="nav-user">
+        <span class="user-points" id="nav-points">0 pts</span>
+        <div class="user-avatar" id="nav-avatar" onclick="Auth.toggleUserMenu()"></div>
+        <div class="user-menu hidden" id="user-menu">
+          <div class="user-menu-header" id="user-menu-name"></div>
+          <a href="#" onclick="Auth.showProfile(); return false;">My Profile</a>
+          <a href="withdraw.html">Withdraw</a>
+          <a href="subscription.html">Subscription</a>
+          <a href="#" onclick="Auth.logout(); return false;">Log Out</a>
+        </div>
+      </div>
+      <button class="mobile-menu-btn" aria-label="Toggle menu">&#9776;</button>
+    </div>
+  </nav>
+
+  <section class="games-hub">
+    <div class="container">
+      <div class="hub-header">
+        <h1>Choose Your <span class="highlight">Game</span></h1>
+        <p>Pick a category and start revealing. Fewer tiles = more points!</p>
+      </div>
+
+      <div class="category-grid">
+        <a href="reveal.html?category=celebrities" class="category-card" style="--card-color: #6c5ce7">
+          <div class="category-icon">&#128248;</div>
+          <h3>Reveal Celebrities</h3>
+          <p>Guess famous celebrities from movies, TV, and pop culture</p>
+          <span class="category-count">15 to guess</span>
+          <span class="category-cta">Play Now &rarr;</span>
+        </a>
+
+        <a href="reveal.html?category=spotify" class="category-card" style="--card-color: #1DB954">
+          <div class="category-icon">&#127925;</div>
+          <h3>Reveal Spotify Artists</h3>
+          <p>Name the biggest artists streaming on Spotify</p>
+          <span class="category-count">15 to guess</span>
+          <span class="category-cta">Play Now &rarr;</span>
+        </a>
+
+        <a href="reveal.html?category=sports" class="category-card" style="--card-color: #e74c3c">
+          <div class="category-icon">&#9917;</div>
+          <h3>Reveal Sports Players</h3>
+          <p>Identify legendary athletes from all sports</p>
+          <span class="category-count">15 to guess</span>
+          <span class="category-cta">Play Now &rarr;</span>
+        </a>
+
+        <a href="reveal.html?category=music" class="category-card" style="--card-color: #e84393">
+          <div class="category-icon">&#127908;</div>
+          <h3>Reveal Music Artists</h3>
+          <p>Recognize iconic musicians and bands of all time</p>
+          <span class="category-count">15 to guess</span>
+          <span class="category-cta">Play Now &rarr;</span>
+        </a>
+
+        <a href="reveal.html?category=places" class="category-card" style="--card-color: #0984e3">
+          <div class="category-icon">&#127758;</div>
+          <h3>Reveal Important Places</h3>
+          <p>Identify famous landmarks and places around the world</p>
+          <span class="category-count">15 to guess</span>
+          <span class="category-cta">Play Now &rarr;</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Auth Modal -->
+  <div class="modal-overlay hidden" id="auth-modal">
+    <div class="modal">
+      <button class="modal-close" onclick="Auth.hideModal()">&times;</button>
+      <div id="login-form" class="auth-form">
+        <h2>Welcome Back</h2>
+        <p class="auth-subtitle">Log in to continue playing and earning.</p>
+        <form onsubmit="Auth.login(event)">
+          <div class="form-group"><label for="login-email">Email</label><input type="email" id="login-email" placeholder="you@example.com" required></div>
+          <div class="form-group"><label for="login-password">Password</label><input type="password" id="login-password" placeholder="Your password" required minlength="6"></div>
+          <div id="login-error" class="form-error hidden"></div>
+          <button type="submit" class="btn btn-primary btn-lg btn-full">Log In</button>
+        </form>
+        <p class="auth-switch">Don't have an account? <a href="#" onclick="Auth.switchForm('signup'); return false;">Sign up</a></p>
+      </div>
+      <div id="signup-form" class="auth-form hidden">
+        <h2>Create Account</h2>
+        <p class="auth-subtitle">Join for free and start winning today.</p>
+        <form onsubmit="Auth.signup(event)">
+          <div class="form-group"><label for="signup-name">Username</label><input type="text" id="signup-name" placeholder="Choose a username" required minlength="3" maxlength="20"></div>
+          <div class="form-group"><label for="signup-email">Email</label><input type="email" id="signup-email" placeholder="you@example.com" required></div>
+          <div class="form-group"><label for="signup-password">Password</label><input type="password" id="signup-password" placeholder="Min 6 characters" required minlength="6"></div>
+          <div class="form-group"><label for="signup-confirm">Confirm Password</label><input type="password" id="signup-confirm" placeholder="Repeat password" required minlength="6"></div>
+          <div id="signup-error" class="form-error hidden"></div>
+          <button type="submit" class="btn btn-primary btn-lg btn-full">Create Account</button>
+        </form>
+        <p class="auth-switch">Already have an account? <a href="#" onclick="Auth.switchForm('login'); return false;">Log in</a></p>
+      </div>
+      <div id="profile-view" class="auth-form hidden">
+        <h2>My Profile</h2>
+        <div class="profile-card"><div class="profile-avatar" id="profile-avatar"></div><div class="profile-info"><h3 id="profile-name"></h3><p id="profile-email"></p></div></div>
+        <div class="profile-stats">
+          <div class="profile-stat"><span class="profile-stat-value" id="profile-points">0</span><span class="profile-stat-label">Points</span></div>
+          <div class="profile-stat"><span class="profile-stat-value" id="profile-games">0</span><span class="profile-stat-label">Games Played</span></div>
+          <div class="profile-stat"><span class="profile-stat-value" id="profile-joined"></span><span class="profile-stat-label">Member Since</span></div>
+        </div>
+        <button class="btn btn-outline btn-full" onclick="Auth.hideModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/auth.js"></script>
+</body>
+</html>
