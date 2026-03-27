@@ -141,6 +141,16 @@ const Withdraw = (() => {
       localStorage.setItem("wem_users", JSON.stringify(users));
     }
 
+    // Log to ledger
+    if (typeof Ledger !== "undefined") {
+      Ledger.addEntry(
+        Ledger.TYPES.WITHDRAWAL,
+        -pointsToDeduct,
+        `Withdrawal $${amount.toFixed(2)} via ${methodLabels[selectedMethod]}`,
+        { method: selectedMethod, dollarAmount: amount }
+      );
+    }
+
     // Save transaction
     const transaction = {
       id: Date.now(),

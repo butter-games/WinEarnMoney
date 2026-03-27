@@ -292,7 +292,8 @@ const RevealGame = (() => {
     nextBtn.textContent = currentRound >= gameOrder.length ? "See Results" : `Next ${itemLabel}`;
 
     if (correct && points > 0 && typeof Auth !== "undefined" && Auth.isLoggedIn()) {
-      Auth.addPoints(points);
+      const catName = category ? category.title : "Game";
+      Auth.addPoints(points, Ledger.TYPES.GAME_WIN, `Reveal ${catName} - guessed ${currentItem.name} (+${points} pts)`);
     }
   }
 
