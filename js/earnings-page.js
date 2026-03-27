@@ -108,7 +108,7 @@ const EarningsPage = (() => {
         <div class="earnings-date-group">
           <div class="earnings-date-header">
             <span class="earnings-date">${date}</span>
-            <span class="earnings-day-total ${dayTotal >= 0 ? "positive" : "negative"}">${dayTotal >= 0 ? "+" : ""}${dayTotal.toLocaleString()} pts</span>
+            <span class="earnings-day-total ${dayTotal >= 0 ? "positive" : "negative"}">Earnings ${dayTotal >= 0 ? "+" : ""}${dayTotal.toLocaleString()}</span>
           </div>
           ${items.map((e) => renderEntry(e)).join("")}
         </div>
@@ -126,21 +126,60 @@ const EarningsPage = (() => {
       hour: "2-digit",
       minute: "2-digit",
     });
+    const fullDate = new Date(entry.date).toLocaleString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+
+    const meta = entry.meta || {};
+    const metaDetails = Object.keys(meta).length > 0
+      ? Object.entries(meta).map(([k, v]) => `<span>${k}: <strong>${v}</strong></span>`).join("")
+      : "";
 
     return `
-      <div class="earnings-entry">
-        <div class="earnings-entry-left">
-          <div class="earnings-entry-icon ${isPositive ? "entry-positive" : "entry-negative"}">${icon}</div>
-          <div class="earnings-entry-info">
-            <span class="earnings-entry-desc">${entry.description}</span>
-            <span class="earnings-entry-meta">${label} &middot; ${time}</span>
+      <div class="earnings-entry" onclick="this.classList.toggle('expanded')">
+        <div class="earnings-entry-main">
+          <div class="earnings-entry-left">
+            <div class="earnings-entry-icon ${isPositive ? "entry-positive" : "entry-negative"}">${icon}</div>
+            <div class="earnings-entry-info">
+              <span class="earnings-entry-desc">${entry.description}</span>
+              <span class="earnings-entry-meta">${label} &middot; ${time}</span>
+            </div>
+          </div>
+          <div class="earnings-entry-right">
+            <span class="earnings-entry-amount ${isPositive ? "positive" : "negative"}">
+              Earnings ${isPositive ? "+" : ""}${entry.amount.toLocaleString()}
+            </span>
+            <span class="earnings-entry-balance">Bal: ${entry.balanceAfter.toLocaleString()}</span>
           </div>
         </div>
-        <div class="earnings-entry-right">
-          <span class="earnings-entry-amount ${isPositive ? "positive" : "negative"}">
-            ${isPositive ? "+" : ""}${entry.amount.toLocaleString()} pts
-          </span>
-          <span class="earnings-entry-balance">Bal: ${entry.balanceAfter.toLocaleString()}</span>
+        <div class="earnings-entry-detail">
+          <div class="entry-detail-row">
+            <span>Transaction ID</span>
+            <strong>${entry.id}</strong>
+          </div>
+          <div class="entry-detail-row">
+            <span>Type</span>
+            <strong>${label}</strong>
+          </div>
+          <div class="entry-detail-row">
+            <span>Date &amp; Time</span>
+            <strong>${fullDate}</strong>
+          </div>
+          <div class="entry-detail-row">
+            <span>Amount</span>
+            <strong class="${isPositive ? "positive" : "negative"}">${isPositive ? "+" : ""}${entry.amount.toLocaleString()}</strong>
+          </div>
+          <div class="entry-detail-row">
+            <span>Balance After</span>
+            <strong>${entry.balanceAfter.toLocaleString()}</strong>
+          </div>
+          ${metaDetails ? `<div class="entry-detail-meta">${metaDetails}</div>` : ""}
         </div>
       </div>
     `;
