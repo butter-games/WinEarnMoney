@@ -1,5 +1,5 @@
 const Tournament = (() => {
-  // Celebrity data with wrong answer options for multiple choice
+  // Celebrity data with multiple choice options
   const celebrities = [
     { name: "Dwayne Johnson", wiki: "Dwayne_Johnson", options: ["Vin Diesel", "Dwayne Johnson", "John Cena", "Jason Statham"] },
     { name: "Taylor Swift", wiki: "Taylor_Swift", options: ["Ariana Grande", "Selena Gomez", "Taylor Swift", "Billie Eilish"] },
@@ -18,16 +18,24 @@ const Tournament = (() => {
     { name: "Selena Gomez", wiki: "Selena_Gomez", options: ["Demi Lovato", "Miley Cyrus", "Selena Gomez", "Zendaya"] },
   ];
 
-  const GRID_SIZE = 4; // 4x4 grid = 16 tiles
+  // --- Server-controlled config (change these to tune scoring) ---
+  const SERVER_CONFIG = {
+    pointsPerQuestion: 1,  // Base points per correct answer (dice_value × this)
+  };
+
+  const GRID_SIZE = 4;
   const TOTAL_TILES = GRID_SIZE * GRID_SIZE;
   const IMAGES_PER_ROUND = 10;
   const TIME_PER_IMAGE = 10;
-  const POINTS_PER_CORRECT = 6;
+  const MAX_ATTEMPTS = 10;
+  const CONTEST_HISTORY_KEY = "wem_contest_history";
 
   let currentContest = null;
   let gameOrder = [];
   let currentImageIndex = 0;
   let score = 0;
+  let diceValue = 0;
+  let diceRolled = false;
   let timer = null;
   let timeLeft = TIME_PER_IMAGE;
   let selectedOption = null;
@@ -35,49 +43,144 @@ const Tournament = (() => {
   let autoRevealInterval = null;
   let botPlayers = [];
 
-  // Contest definitions
-  const contests = [
-    { id: 1, name: "Champs League", entry: "Free", prize: "$50", players: "47/100", time: "Ends in 45 min", type: "free", maxPlayers: 100 },
-    { id: 2, name: "Pro Challenge", entry: "$0.99", prize: "$100", players: "23/50", time: "Ends in 30 min", type: "paid", maxPlayers: 50 },
-    { id: 3, name: "Mega Contest", entry: "$1.99", prize: "$250", players: "89/200", time: "Ends in 1 hr", type: "subscriber", maxPlayers: 200 },
-    { id: 4, name: "Quick Fire", entry: "Free", prize: "$25", players: "15/30", time: "Ends in 15 min", type: "free", maxPlayers: 30 },
-  ];
+  // Generate hourly contest schedule for today
+  function generateContests() {
+    const now = new Date();
+    const hours = [9, 12, 15, 18]; // 4 hourly contests at 9am, 12pm, 3pm, 6pm
+    const contests = [];
+
+    // Daily Champs League
+    contests.push({
+      id: "daily",
+      name: "Daily Champs League",
+      entry: "Subscriber",
+      prize: "$50",
+      type: "subscriber",
+      maxPlayers: 200,
+      playersJoined: 47 + Math.floor(Math.random() * 100),
+      endsAt: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59),
+      isDaily: true,
+    });
+
+    // 4 hourly contests
+    hours.forEach((h, i) => {
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, 0);
+      const end = new Date(start.getTime() + 60 * 60 * 1000);
+      const active = now >= start && now < end;
+      const upcoming = now < start;
+
+      contests.push({
+        id: `hourly-${i}`,
+        name: `Hourly Contest #${i + 1}`,
+        entry: "Subscriber",
+        prize: "$25",
+        type: "subscriber",
+        maxPlayers: 100,
+        playersJoined: active ? 15 + Math.floor(Math.random() * 60) : 0,
+        endsAt: end,
+        startsAt: start,
+        isActive: active,
+        isUpcoming: upcoming,
+      });
+    });
+
+    return contests;
+  }
 
   function init() {
     renderContests();
   }
 
   function renderContests() {
+    const contests = generateContests();
+    const now = new Date();
     const grid = document.getElementById("contest-grid");
-    grid.innerHTML = contests.map((c) => `
-      <div class="contest-card ${c.type === 'subscriber' ? 'contest-premium' : ''}">
-        <div class="contest-card-header">
-          <h3>${c.name}</h3>
-          ${c.type === 'subscriber' ? '<span class="contest-lock">PRO</span>' : ''}
-        </div>
-        <div class="contest-details">
-          <div class="contest-detail">
-            <span class="contest-detail-label">Entry</span>
-            <span class="contest-detail-value">${c.entry}</span>
+
+    const liveCount = contests.filter((c) => {
+      if (c.isDaily) return true;
+      return c.isActive;
+    }).length;
+    document.getElementById("live-count").textContent = `${liveCount} contest${liveCount !== 1 ? "s" : ""} running`;
+
+    grid.innerHTML = contests.map((c) => {
+      const history = getContestHistory(c.id);
+      const bestScore = history.bestScore || 0;
+      const attempts = history.attempts || 0;
+      const fillPct = (c.playersJoined / c.maxPlayers) * 100;
+
+      let timeStr = "";
+      if (c.isDaily) {
+        timeStr = "Ends at midnight";
+      } else if (c.isActive) {
+        const mins = Math.max(0, Math.floor((c.endsAt - now) / 60000));
+        timeStr = `Ends in ${mins} min`;
+      } else if (c.isUpcoming) {
+        const hrs = Math.floor((c.startsAt - now) / 3600000);
+        const mins = Math.floor(((c.startsAt - now) % 3600000) / 60000);
+        timeStr = hrs > 0 ? `Starts in ${hrs}h ${mins}m` : `Starts in ${mins}m`;
+      } else {
+        timeStr = "Ended";
+      }
+
+      const canPlay = c.isDaily || c.isActive;
+      const attemptsLeft = MAX_ATTEMPTS - attempts;
+
+      return `
+        <div class="contest-card contest-premium">
+          <div class="contest-card-header">
+            <h3>${c.name}</h3>
+            ${c.isDaily ? '<span class="contest-badge-daily">DAILY</span>' : ""}
+            ${c.isActive ? '<span class="contest-badge-live"><span class="live-dot"></span> LIVE</span>' : ""}
+            ${c.isUpcoming ? '<span class="contest-badge-upcoming">UPCOMING</span>' : ""}
           </div>
-          <div class="contest-detail">
-            <span class="contest-detail-label">Prize Pool</span>
-            <span class="contest-detail-value prize">${c.prize}</span>
+          <div class="contest-details">
+            <div class="contest-detail">
+              <span class="contest-detail-label">Prize Pool</span>
+              <span class="contest-detail-value prize">${c.prize}</span>
+            </div>
+            <div class="contest-detail">
+              <span class="contest-detail-label">Players</span>
+              <span class="contest-detail-value">${c.playersJoined}/${c.maxPlayers}</span>
+            </div>
+            <div class="contest-detail">
+              <span class="contest-detail-label">Best Score</span>
+              <span class="contest-detail-value">${bestScore > 0 ? bestScore : "-"}</span>
+            </div>
+            <div class="contest-detail">
+              <span class="contest-detail-label">Attempts</span>
+              <span class="contest-detail-value">${attempts}/${MAX_ATTEMPTS}</span>
+            </div>
           </div>
-          <div class="contest-detail">
-            <span class="contest-detail-label">Players</span>
-            <span class="contest-detail-value">${c.players}</span>
+          <div class="contest-footer">
+            <span class="contest-time">${timeStr}</span>
+            ${canPlay && attemptsLeft > 0
+              ? `<button class="btn btn-primary contest-join-btn" onclick="Tournament.joinContest('${c.id}')">${attempts > 0 ? "Replay" : "Join"}</button>`
+              : attemptsLeft <= 0
+                ? `<span class="contest-maxed">Max attempts</span>`
+                : `<button class="btn btn-outline contest-join-btn" disabled>Not Active</button>`
+            }
+          </div>
+          <div class="contest-progress-bar">
+            <div class="contest-progress-fill" style="width: ${fillPct}%"></div>
           </div>
         </div>
-        <div class="contest-footer">
-          <span class="contest-time">${c.time}</span>
-          <button class="btn btn-primary contest-join-btn" onclick="Tournament.joinContest(${c.id})">Join</button>
-        </div>
-        <div class="contest-progress-bar">
-          <div class="contest-progress-fill" style="width: ${parseInt(c.players) / c.maxPlayers * 100}%"></div>
-        </div>
-      </div>
-    `).join("");
+      `;
+    }).join("");
+  }
+
+  function getContestHistory(contestId) {
+    const all = JSON.parse(localStorage.getItem(CONTEST_HISTORY_KEY) || "{}");
+    return all[contestId] || { attempts: 0, bestScore: 0, scores: [] };
+  }
+
+  function saveContestHistory(contestId, score) {
+    const all = JSON.parse(localStorage.getItem(CONTEST_HISTORY_KEY) || "{}");
+    if (!all[contestId]) all[contestId] = { attempts: 0, bestScore: 0, scores: [] };
+    all[contestId].attempts++;
+    all[contestId].scores.push(score);
+    all[contestId].bestScore = Math.max(all[contestId].bestScore, score);
+    localStorage.setItem(CONTEST_HISTORY_KEY, JSON.stringify(all));
+    return all[contestId];
   }
 
   function joinContest(contestId) {
@@ -86,19 +189,18 @@ const Tournament = (() => {
       return;
     }
 
-    const contest = contests.find((c) => c.id === contestId);
-    if (!contest) return;
-
-    // Check subscription for premium contests
-    if (contest.type === "subscriber") {
-      const user = Auth.currentUser();
-      if (!user.subscribed) {
-        document.getElementById("sub-prompt").classList.remove("hidden");
-        return;
-      }
+    // Check subscription
+    const user = Auth.currentUser();
+    if (!user.subscribed) {
+      document.getElementById("sub-prompt").classList.remove("hidden");
+      return;
     }
 
-    currentContest = contest;
+    // Check attempts
+    const history = getContestHistory(contestId);
+    if (history.attempts >= MAX_ATTEMPTS) return;
+
+    currentContest = { id: contestId };
     startTournamentGame();
   }
 
@@ -121,13 +223,56 @@ const Tournament = (() => {
       "CryptoKing99", "LuckyAce", "GameMaster", "QuizWhiz", "StarPlayer",
       "SwiftGuess", "ProGamer22", "PointsHunter", "TopScorer", "QuickDraw",
       "BrainStorm", "TriviaKing", "SmartPlay", "GoldRush", "ChampX",
-      "NightOwl", "EagleEye", "PixelPro", "VictoryLap", "ThunderBolt"
+      "NightOwl", "EagleEye", "PixelPro", "VictoryLap", "ThunderBolt",
     ];
     return shuffleArray(names).slice(0, 19).map((name) => ({
       name,
       score: 0,
-      finalScore: Math.floor(Math.random() * 45) + 15,
+      // Simulate dice-based final scores (avg dice ~3.5 × 10 questions × pointsPerQ × ~70% accuracy)
+      finalScore: Math.floor(Math.random() * 30) + 5,
     }));
+  }
+
+  // ===== DICE MECHANIC =====
+  function rollDice() {
+    if (diceRolled) return;
+    diceRolled = true;
+
+    const diceEl = document.getElementById("tm-dice");
+    const faceEl = document.getElementById("tm-dice-face");
+
+    diceEl.classList.add("tm-dice-rolling");
+
+    // Animate through random values
+    let rollCount = 0;
+    const rollInterval = setInterval(() => {
+      faceEl.textContent = getDiceFace(Math.floor(Math.random() * 6) + 1);
+      rollCount++;
+      if (rollCount > 12) {
+        clearInterval(rollInterval);
+        // Final value
+        diceValue = Math.floor(Math.random() * 6) + 1;
+        faceEl.textContent = getDiceFace(diceValue);
+        diceEl.classList.remove("tm-dice-rolling");
+        diceEl.classList.add("tm-dice-landed");
+
+        // Update dice info
+        const totalPts = diceValue * SERVER_CONFIG.pointsPerQuestion;
+        document.getElementById("tm-dice-mult").textContent = diceValue;
+        document.getElementById("tm-dice-base").textContent = `${SERVER_CONFIG.pointsPerQuestion} pt`;
+        document.getElementById("tm-dice-total").textContent = `${totalPts} Pts`;
+        document.getElementById("tm-image-pts").textContent = `${totalPts} Pts`;
+
+        // Now start the timer and reveal
+        startAutoReveal();
+        startTimer();
+      }
+    }, 80);
+  }
+
+  function getDiceFace(val) {
+    const faces = { 1: "\u2680", 2: "\u2681", 3: "\u2682", 4: "\u2683", 5: "\u2684", 6: "\u2685" };
+    return faces[val] || "?";
   }
 
   async function loadImage() {
@@ -139,14 +284,25 @@ const Tournament = (() => {
     const celeb = gameOrder[currentImageIndex];
     selectedOption = null;
     revealedTiles = new Set();
+    diceRolled = false;
+    diceValue = 0;
     timeLeft = TIME_PER_IMAGE;
+
+    // Reset dice UI
+    const diceEl = document.getElementById("tm-dice");
+    diceEl.classList.remove("tm-dice-landed", "tm-dice-rolling");
+    document.getElementById("tm-dice-face").textContent = "?";
+    document.getElementById("tm-dice-mult").textContent = "?";
+    document.getElementById("tm-dice-total").textContent = "? Pts";
+    document.getElementById("tm-dice-base").textContent = `${SERVER_CONFIG.pointsPerQuestion} pt`;
 
     // Update UI
     document.getElementById("tm-round").textContent = `Image ${currentImageIndex + 1}/${IMAGES_PER_ROUND}`;
     document.getElementById("tm-image-label").textContent = `Image ${currentImageIndex + 1}`;
-    document.getElementById("tm-image-pts").textContent = `${POINTS_PER_CORRECT} Pts`;
+    document.getElementById("tm-image-pts").textContent = "? Pts";
     document.getElementById("tm-score").textContent = `${score} Score`;
     document.getElementById("tm-timer").textContent = `${TIME_PER_IMAGE}s`;
+    document.getElementById("tm-timer").classList.remove("tm-timer-danger");
     document.getElementById("tm-progress").style.width = "100%";
     document.getElementById("tm-submit").disabled = true;
 
@@ -174,9 +330,8 @@ const Tournament = (() => {
       });
     }
 
-    // Start auto-reveal and timer
-    startAutoReveal();
-    startTimer();
+    // Auto-roll dice after short delay
+    setTimeout(rollDice, 500);
   }
 
   async function fetchWikiImage(wikiTitle) {
@@ -213,7 +368,6 @@ const Tournament = (() => {
 
   function startAutoReveal() {
     clearInterval(autoRevealInterval);
-    let revealCount = 0;
     const revealDelay = (TIME_PER_IMAGE * 1000) / (TOTAL_TILES + 2);
 
     autoRevealInterval = setInterval(() => {
@@ -248,9 +402,10 @@ const Tournament = (() => {
       if (timeLeft <= 0) {
         clearInterval(timer);
         clearInterval(autoRevealInterval);
-        // Time's up - auto advance
         revealAllTiles();
         updateBotScores();
+        // Time's up - 0 points, auto advance
+        document.getElementById("tm-image-pts").textContent = "+0 Pts";
         setTimeout(() => {
           currentImageIndex++;
           loadImage();
@@ -287,12 +442,12 @@ const Tournament = (() => {
     });
 
     if (correct) {
-      // Bonus points based on time remaining
-      const timeBonus = Math.floor(timeLeft / 2);
-      const points = POINTS_PER_CORRECT + timeBonus;
+      // DICE SCORING: dice_value × server points_per_question
+      const points = diceValue * SERVER_CONFIG.pointsPerQuestion;
       score += points;
       document.getElementById("tm-image-pts").textContent = `+${points} Pts!`;
     } else {
+      // Wrong answer = 0 points regardless of dice
       document.getElementById("tm-image-pts").textContent = "+0 Pts";
     }
 
@@ -302,7 +457,6 @@ const Tournament = (() => {
     revealAllTiles();
     updateBotScores();
 
-    // Next image after delay
     setTimeout(() => {
       currentImageIndex++;
       loadImage();
@@ -325,21 +479,24 @@ const Tournament = (() => {
   }
 
   function renderLeaderboard() {
+    const myBest = currentContest ? getContestHistory(currentContest.id).bestScore : 0;
+    const displayScore = Math.max(score, myBest);
+
     const allPlayers = [
-      { name: Auth.isLoggedIn() ? Auth.currentUser().name : "You", score: score, isMe: true },
+      { name: Auth.isLoggedIn() ? Auth.currentUser().name : "You", score: displayScore, isMe: true },
       ...botPlayers,
     ].sort((a, b) => b.score - a.score);
 
     const myRank = allPlayers.findIndex((p) => p.isMe) + 1;
     document.getElementById("tm-my-rank").querySelector(".tm-rank-num").textContent = `${myRank}.`;
-    document.getElementById("tm-my-score").textContent = score;
+    document.getElementById("tm-my-score").textContent = displayScore;
 
     const rankingsEl = document.getElementById("tm-rankings");
     rankingsEl.innerHTML = allPlayers.slice(0, 10).map((p, i) => `
-      <div class="tm-rank-row ${p.isMe ? 'tm-rank-me' : ''}">
+      <div class="tm-rank-row ${p.isMe ? "tm-rank-me" : ""}">
         <span class="tm-rank-num">${i + 1}.</span>
         <span class="tm-rank-avatar">&#128100;</span>
-        <span class="tm-rank-name">${p.isMe ? 'My Rank' : p.name}</span>
+        <span class="tm-rank-name">${p.isMe ? "My Rank" : p.name}</span>
         <span class="tm-rank-score">${p.score}</span>
       </div>
     `).join("");
@@ -349,29 +506,50 @@ const Tournament = (() => {
     clearInterval(timer);
     clearInterval(autoRevealInterval);
 
+    // Save score and get updated history
+    const history = saveContestHistory(currentContest.id, score);
+
     updateBotScores();
 
     document.getElementById("tm-gameover").classList.remove("hidden");
     document.getElementById("tm-final-score").textContent = score;
+    document.getElementById("tm-best-score").textContent = history.bestScore;
+    document.getElementById("tm-attempts-used").textContent = history.attempts;
 
-    const allPlayers = [
-      { name: "You", score: score, isMe: true },
-      ...botPlayers,
-    ].sort((a, b) => b.score - a.score);
-    const rank = allPlayers.findIndex((p) => p.isMe) + 1;
+    const attemptsLeft = MAX_ATTEMPTS - history.attempts;
+    const replayBtn = document.getElementById("tm-replay-btn");
 
-    if (rank <= 3) {
-      document.getElementById("tm-final-msg").textContent = `Amazing! You finished #${rank} - prize incoming!`;
-    } else if (rank <= 10) {
-      document.getElementById("tm-final-msg").textContent = `Good game! You finished #${rank}.`;
+    if (attemptsLeft > 0) {
+      replayBtn.classList.remove("hidden");
+      replayBtn.textContent = `Replay (${attemptsLeft} left)`;
     } else {
-      document.getElementById("tm-final-msg").textContent = `You finished #${rank}. Keep practicing!`;
+      replayBtn.classList.add("hidden");
     }
 
-    // Award points
-    if (Auth.isLoggedIn() && score > 0) {
-      Auth.addPoints(score);
+    if (score >= history.bestScore && score > 0) {
+      document.getElementById("tm-final-msg").textContent = "New best score! Can you do even better?";
+    } else if (attemptsLeft > 0) {
+      document.getElementById("tm-final-msg").textContent = "Replay to improve your score!";
+    } else {
+      document.getElementById("tm-final-msg").textContent = "All attempts used. Check the leaderboard!";
     }
+
+    // Award points (only for improvement over previous best)
+    if (Auth.isLoggedIn() && score > 0) {
+      const previousBest = history.scores.length > 1
+        ? Math.max(...history.scores.slice(0, -1))
+        : 0;
+      const improvement = Math.max(0, score - previousBest);
+      if (improvement > 0) {
+        Auth.addPoints(improvement);
+      }
+    }
+  }
+
+  function replay() {
+    const history = getContestHistory(currentContest.id);
+    if (history.attempts >= MAX_ATTEMPTS) return;
+    startTournamentGame();
   }
 
   function viewLeaderboard() {
@@ -384,6 +562,7 @@ const Tournament = (() => {
     clearInterval(autoRevealInterval);
     document.getElementById("tournament-modal").classList.add("hidden");
     document.body.style.overflow = "";
+    renderContests(); // Refresh contest list with updated attempts
   }
 
   function switchTab(tab) {
@@ -405,5 +584,5 @@ const Tournament = (() => {
 
   document.addEventListener("DOMContentLoaded", init);
 
-  return { joinContest, selectOption, submitAnswer, closeGame, switchTab, viewLeaderboard };
+  return { joinContest, selectOption, submitAnswer, closeGame, switchTab, viewLeaderboard, replay };
 })();

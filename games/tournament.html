@@ -88,15 +88,33 @@
           <span class="tm-timer" id="tm-timer">10s</span>
         </div>
 
-        <!-- Image Area -->
-        <div class="tm-image-area">
-          <div class="tm-image-container" id="tm-image-container">
-            <img id="tm-image" alt="Celebrity">
-            <div class="tm-tile-grid" id="tm-tile-grid"></div>
+        <!-- Dice + Image Area -->
+        <div class="tm-dice-image-row">
+          <!-- Dice Panel -->
+          <div class="tm-dice-panel">
+            <div class="tm-dice-label">Roll Dice</div>
+            <div class="tm-dice" id="tm-dice">
+              <div class="tm-dice-face" id="tm-dice-face">?</div>
+            </div>
+            <div class="tm-dice-info">
+              <span class="tm-dice-multiplier" id="tm-dice-mult">?</span>
+              <span class="tm-dice-x">&times;</span>
+              <span class="tm-dice-base" id="tm-dice-base">1 pt</span>
+              <span class="tm-dice-eq">=</span>
+              <span class="tm-dice-total" id="tm-dice-total">? Pts</span>
+            </div>
           </div>
-          <div class="tm-image-info">
-            <span id="tm-image-label">Image 1</span>
-            <span class="tm-image-pts" id="tm-image-pts">6 Pts</span>
+
+          <!-- Image Area -->
+          <div class="tm-image-area">
+            <div class="tm-image-container" id="tm-image-container">
+              <img id="tm-image" alt="Celebrity">
+              <div class="tm-tile-grid" id="tm-tile-grid"></div>
+            </div>
+            <div class="tm-image-info">
+              <span id="tm-image-label">Image 1</span>
+              <span class="tm-image-pts" id="tm-image-pts">? Pts</span>
+            </div>
           </div>
         </div>
 
@@ -153,14 +171,23 @@
       <!-- Game Over Overlay -->
       <div class="tm-gameover hidden" id="tm-gameover">
         <div class="tm-gameover-card">
-          <h2>Tournament Complete!</h2>
+          <h2>Round Complete!</h2>
           <div class="tm-final-score">
-            <span class="tm-final-label">Your Score</span>
+            <span class="tm-final-label">This Attempt</span>
             <span class="tm-final-value" id="tm-final-score">0</span>
           </div>
-          <p class="tm-final-msg" id="tm-final-msg">Results will be announced shortly.</p>
-          <button class="btn btn-primary btn-lg" onclick="Tournament.viewLeaderboard()">View Leaderboard</button>
-          <a href="tournament.html" class="btn btn-outline btn-lg">Back to Contests</a>
+          <div class="tm-best-score">
+            <span>Best Score:</span>
+            <strong id="tm-best-score">0</strong>
+          </div>
+          <div class="tm-attempts-info">
+            <span>Attempts used:</span>
+            <strong><span id="tm-attempts-used">1</span> / 10</strong>
+          </div>
+          <p class="tm-final-msg" id="tm-final-msg">Replay to improve your score!</p>
+          <button class="btn btn-primary btn-lg" id="tm-replay-btn" onclick="Tournament.replay()">Replay Contest</button>
+          <button class="btn btn-outline btn-lg" onclick="Tournament.viewLeaderboard()">View Leaderboard</button>
+          <a href="tournament.html" class="btn btn-outline btn-lg tm-back-link">Back to Contests</a>
         </div>
       </div>
     </div>
