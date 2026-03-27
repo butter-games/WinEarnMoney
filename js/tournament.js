@@ -541,7 +541,7 @@ const Tournament = (() => {
         : 0;
       const improvement = Math.max(0, score - previousBest);
       if (improvement > 0) {
-        Auth.addPoints(improvement);
+        Auth.addPoints(improvement, Ledger.TYPES.TOURNAMENT_WIN, `Tournament score improvement (+${improvement} pts)`);
       }
     }
   }

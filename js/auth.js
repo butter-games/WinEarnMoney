@@ -159,7 +159,7 @@ const Auth = (() => {
     document.getElementById("user-menu").classList.add("hidden");
   }
 
-  function addPoints(pts) {
+  function addPoints(pts, source, description) {
     const user = currentUser();
     if (!user) return;
 
@@ -173,6 +173,13 @@ const Auth = (() => {
       users[user.email].points = user.points;
       users[user.email].gamesPlayed = user.gamesPlayed;
       saveUsers(users);
+    }
+
+    // Log to ledger
+    if (typeof Ledger !== "undefined" && pts !== 0) {
+      const type = source || Ledger.TYPES.GAME_WIN;
+      const desc = description || `Earned ${pts} points`;
+      Ledger.addEntry(type, pts, desc);
     }
 
     updatePointsDisplay();
