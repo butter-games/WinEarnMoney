@@ -57,7 +57,20 @@ const Tournament = (() => {
     const hours = [9, 12, 15, 18]; // 4 hourly contests at 9am, 12pm, 3pm, 6pm
     const contests = [];
 
-    // Daily Champs League
+    // Free Daily Contest (available to all users)
+    contests.push({
+      id: "free-daily",
+      name: "Free Daily Contest",
+      entry: "Free",
+      prize: "$10",
+      type: "free",
+      maxPlayers: 500,
+      playersJoined: 120 + Math.floor(Math.random() * 200),
+      endsAt: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59),
+      isDaily: true,
+    });
+
+    // Daily Champs League (subscribers)
     contests.push({
       id: "daily",
       name: "Daily Champs League",
@@ -70,7 +83,7 @@ const Tournament = (() => {
       isDaily: true,
     });
 
-    // 4 hourly contests
+    // 4 hourly contests (subscribers)
     hours.forEach((h, i) => {
       const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, 0);
       const end = new Date(start.getTime() + 60 * 60 * 1000);
@@ -134,10 +147,11 @@ const Tournament = (() => {
       const attemptsLeft = MAX_ATTEMPTS - attempts;
 
       return `
-        <div class="contest-card contest-premium">
+        <div class="contest-card ${c.type === 'subscriber' ? 'contest-premium' : 'contest-free'}">
           <div class="contest-card-header">
             <h3>${c.name}</h3>
-            ${c.isDaily ? '<span class="contest-badge-daily">DAILY</span>' : ""}
+            ${c.type === 'free' ? '<span class="contest-badge-free">FREE</span>' : ""}
+            ${c.type === 'subscriber' && c.isDaily ? '<span class="contest-badge-daily">PRO</span>' : ""}
             ${c.isActive ? '<span class="contest-badge-live"><span class="live-dot"></span> LIVE</span>' : ""}
             ${c.isUpcoming ? '<span class="contest-badge-upcoming">UPCOMING</span>' : ""}
           </div>
