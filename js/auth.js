@@ -105,6 +105,55 @@ const Auth = (() => {
     saveSession(user);
     hideModal();
     updateUI();
+    showWelcomeDialog(name);
+  }
+
+  function showWelcomeDialog(name) {
+    // Create dialog if it doesn't exist
+    let dialog = document.getElementById("welcome-dialog");
+    if (!dialog) {
+      dialog = document.createElement("div");
+      dialog.id = "welcome-dialog";
+      dialog.className = "modal-overlay";
+      dialog.innerHTML = `
+        <div class="modal welcome-modal">
+          <div class="welcome-content">
+            <div class="welcome-icon">&#127881;</div>
+            <h2>Account Created!</h2>
+            <p class="welcome-name">Welcome, <strong id="welcome-user-name"></strong>!</p>
+            <p class="welcome-msg">Your account is ready. Start playing free games now!</p>
+            <div class="welcome-upgrade">
+              <div class="welcome-upgrade-icon">&#127942;</div>
+              <div class="welcome-upgrade-text">
+                <strong>Want to compete in tournaments?</strong>
+                <p>Upgrade to a subscription to unlock hourly contests, unlimited winnings, and cash prizes.</p>
+              </div>
+            </div>
+            <div class="welcome-buttons">
+              <a href="${getSubscriptionUrl()}" class="btn btn-primary btn-lg btn-full">Upgrade to Pro - $1.99/mo</a>
+              <button class="btn btn-outline btn-full" onclick="document.getElementById('welcome-dialog').classList.add('hidden')">Maybe Later</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(dialog);
+
+      // Close on overlay click
+      dialog.addEventListener("click", (e) => {
+        if (e.target === dialog) dialog.classList.add("hidden");
+      });
+    }
+
+    document.getElementById("welcome-user-name").textContent = name;
+    dialog.classList.remove("hidden");
+  }
+
+  function getSubscriptionUrl() {
+    // Detect if we're in /games/ or root
+    if (window.location.pathname.includes("/games/")) {
+      return "subscription.html";
+    }
+    return "games/subscription.html";
   }
 
   function login(e) {
