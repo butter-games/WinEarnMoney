@@ -391,6 +391,28 @@ window.Auth = (() => {
       }
     });
 
+    // Mobile hamburger menu toggle (works on ALL pages)
+    var mobileBtn = document.querySelector(".mobile-menu-btn");
+    var navLinks = document.querySelector(".nav-links");
+    if (mobileBtn && navLinks) {
+      mobileBtn.addEventListener("click", function(e) {
+        e.stopPropagation();
+        navLinks.classList.toggle("nav-open");
+      });
+      // Close mobile menu when a nav link is clicked
+      navLinks.querySelectorAll("a").forEach(function(link) {
+        link.addEventListener("click", function() {
+          navLinks.classList.remove("nav-open");
+        });
+      });
+      // Close mobile menu when clicking outside
+      document.addEventListener("click", function(e) {
+        if (!e.target.closest(".mobile-menu-btn") && !e.target.closest(".nav-links")) {
+          navLinks.classList.remove("nav-open");
+        }
+      });
+    }
+
     // Run updateUI
     updateUI();
   }
