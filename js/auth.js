@@ -201,11 +201,22 @@ const Auth = (() => {
   }
 
   function toggleUserMenu() {
-    document.getElementById("user-menu").classList.toggle("hidden");
+    const menu = document.getElementById("user-menu");
+    const avatar = document.getElementById("nav-avatar");
+    if (menu.classList.contains("hidden")) {
+      // Position menu below the avatar
+      const rect = avatar.getBoundingClientRect();
+      menu.style.top = (rect.bottom + 8) + "px";
+      menu.style.right = (window.innerWidth - rect.right) + "px";
+      menu.classList.remove("hidden");
+    } else {
+      menu.classList.add("hidden");
+    }
   }
 
   function hideUserMenu() {
-    document.getElementById("user-menu").classList.add("hidden");
+    const menu = document.getElementById("user-menu");
+    if (menu) menu.classList.add("hidden");
   }
 
   function addPoints(pts, source, description) {
@@ -285,8 +296,8 @@ const Auth = (() => {
     if (e.target.classList.contains("modal-overlay")) {
       hideModal();
     }
-    // Close user menu when clicking outside
-    if (!e.target.closest(".nav-user")) {
+    // Close user menu when clicking outside (but not when clicking the menu itself)
+    if (!e.target.closest(".nav-user") && !e.target.closest(".user-menu")) {
       hideUserMenu();
     }
   });
