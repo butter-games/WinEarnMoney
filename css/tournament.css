@@ -413,6 +413,15 @@
   font-weight: 800;
   color: var(--accent);
   font-size: 0.85rem;
+  transition: color 0.3s;
+}
+
+.tm-dice-total.tm-pts-mid {
+  color: var(--gold);
+}
+
+.tm-dice-total.tm-pts-low {
+  color: #ff7675;
 }
 
 /* Image Area */
