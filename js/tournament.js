@@ -20,7 +20,14 @@ const Tournament = (() => {
 
   // --- Server-controlled config (change these to tune scoring) ---
   const SERVER_CONFIG = {
-    pointsPerQuestion: 1,  // Base points per correct answer (dice_value × this)
+    basePointsPerQuestion: 6,  // Max fixed points per question (before decay)
+    decayPerSecond: 1,         // Points lost per second of elapsed time
+    decayStartAfter: 0,        // Seconds before decay begins (0 = immediate)
+    minPoints: 0,              // Minimum fixed points (floor after decay)
+    // Final score per question = dice_roll(1-6) × max(minPoints, basePoints - (elapsed_seconds × decayPerSecond))
+    // Example with defaults: answer at 2s → dice × (6 - 2×1) = dice × 4
+    //                        answer at 5s → dice × (6 - 5×1) = dice × 1
+    //                        answer at 6s+ → dice × 0
   };
 
   const GRID_SIZE = 4;
@@ -38,6 +45,7 @@ const Tournament = (() => {
   let diceRolled = false;
   let timer = null;
   let timeLeft = TIME_PER_IMAGE;
+  let questionStartTime = 0; // timestamp when timer starts (after dice roll)
   let selectedOption = null;
   let revealedTiles = new Set();
   let autoRevealInterval = null;
@@ -256,14 +264,16 @@ const Tournament = (() => {
         diceEl.classList.remove("tm-dice-rolling");
         diceEl.classList.add("tm-dice-landed");
 
-        // Update dice info
-        const totalPts = diceValue * SERVER_CONFIG.pointsPerQuestion;
+        // Update dice info - show max possible (answering instantly)
+        const maxBasePts = SERVER_CONFIG.basePointsPerQuestion;
+        const maxTotalPts = diceValue * maxBasePts;
         document.getElementById("tm-dice-mult").textContent = diceValue;
-        document.getElementById("tm-dice-base").textContent = `${SERVER_CONFIG.pointsPerQuestion} pt`;
-        document.getElementById("tm-dice-total").textContent = `${totalPts} Pts`;
-        document.getElementById("tm-image-pts").textContent = `${totalPts} Pts`;
+        document.getElementById("tm-dice-base").textContent = `${maxBasePts} pt`;
+        document.getElementById("tm-dice-total").textContent = `${maxTotalPts} Pts`;
+        document.getElementById("tm-image-pts").textContent = `${maxTotalPts} Pts`;
 
-        // Now start the timer and reveal
+        // Now start the timer, reveal, and track start time
+        questionStartTime = performance.now();
         startAutoReveal();
         startTimer();
       }
@@ -386,12 +396,42 @@ const Tournament = (() => {
     }, revealDelay);
   }
 
+  function getElapsedSeconds() {
+    return Math.floor((performance.now() - questionStartTime) / 1000);
+  }
+
+  function calculateDecayedPoints() {
+    const elapsed = getElapsedSeconds();
+    const effectiveElapsed = Math.max(0, elapsed - SERVER_CONFIG.decayStartAfter);
+    const decayed = SERVER_CONFIG.basePointsPerQuestion - (effectiveElapsed * SERVER_CONFIG.decayPerSecond);
+    return Math.max(SERVER_CONFIG.minPoints, decayed);
+  }
+
   function startTimer() {
     clearInterval(timer);
     timer = setInterval(() => {
       timeLeft--;
       document.getElementById("tm-timer").textContent = `${timeLeft}s`;
       document.getElementById("tm-progress").style.width = `${(timeLeft / TIME_PER_IMAGE) * 100}%`;
+
+      // Update decaying points display in real-time
+      if (diceValue > 0) {
+        const currentBase = calculateDecayedPoints();
+        const currentTotal = diceValue * currentBase;
+        document.getElementById("tm-dice-base").textContent = `${currentBase} pt`;
+        document.getElementById("tm-dice-total").textContent = `${currentTotal} Pts`;
+        document.getElementById("tm-image-pts").textContent = `${currentTotal} Pts`;
+
+        // Color change as points decay
+        if (currentBase <= 2) {
+          document.getElementById("tm-dice-total").classList.add("tm-pts-low");
+        } else if (currentBase <= 4) {
+          document.getElementById("tm-dice-total").classList.add("tm-pts-mid");
+          document.getElementById("tm-dice-total").classList.remove("tm-pts-low");
+        } else {
+          document.getElementById("tm-dice-total").classList.remove("tm-pts-mid", "tm-pts-low");
+        }
+      }
 
       if (timeLeft <= 3) {
         document.getElementById("tm-timer").classList.add("tm-timer-danger");
@@ -442,10 +482,13 @@ const Tournament = (() => {
     });
 
     if (correct) {
-      // DICE SCORING: dice_value × server points_per_question
-      const points = diceValue * SERVER_CONFIG.pointsPerQuestion;
+      // SCORING: dice_value × decayed_base_points
+      // decayed_base = basePointsPerQuestion - (elapsed_seconds × decayPerSecond)
+      const decayedBase = calculateDecayedPoints();
+      const points = diceValue * decayedBase;
       score += points;
-      document.getElementById("tm-image-pts").textContent = `+${points} Pts!`;
+      const elapsed = getElapsedSeconds();
+      document.getElementById("tm-image-pts").textContent = `+${points} Pts! (${elapsed}s)`;
     } else {
       // Wrong answer = 0 points regardless of dice
       document.getElementById("tm-image-pts").textContent = "+0 Pts";
