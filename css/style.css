@@ -150,14 +150,16 @@ a {
 .nav-open {
   display: flex !important;
   flex-direction: column;
-  position: absolute;
-  top: 100%;
+  position: fixed;
+  top: 64px;
   left: 0;
   right: 0;
   background: rgba(10, 10, 26, 0.98);
   padding: 24px;
   gap: 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  z-index: 10000;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
 /* ===== Hero ===== */
