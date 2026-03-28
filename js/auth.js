@@ -257,30 +257,41 @@ const Auth = (() => {
     const user = currentUser();
 
     // Nav auth buttons vs user menu
-    document.querySelector(".nav-auth").classList.toggle("hidden", loggedIn);
-    document.getElementById("nav-user").classList.toggle("hidden", !loggedIn);
+    const navAuth = document.querySelector(".nav-auth");
+    const navUser = document.getElementById("nav-user");
+    if (navAuth) navAuth.classList.toggle("hidden", loggedIn);
+    if (navUser) navUser.classList.toggle("hidden", !loggedIn);
 
     if (loggedIn && user) {
-      document.getElementById("nav-avatar").textContent = getInitials(user.name);
-      document.getElementById("user-menu-name").textContent = user.name;
+      const avatar = document.getElementById("nav-avatar");
+      const menuName = document.getElementById("user-menu-name");
+      if (avatar) avatar.textContent = getInitials(user.name);
+      if (menuName) menuName.textContent = user.name;
       updatePointsDisplay();
 
-      // Update CTA button
+      // Update CTA button (only exists on landing page)
       const ctaBtn = document.getElementById("cta-btn");
-      ctaBtn.textContent = "Go to Games";
-      ctaBtn.onclick = () => {
-        document.getElementById("play").scrollIntoView({ behavior: "smooth" });
-      };
+      if (ctaBtn) {
+        ctaBtn.textContent = "Go to Games";
+        ctaBtn.onclick = () => {
+          const playSection = document.getElementById("play");
+          if (playSection) playSection.scrollIntoView({ behavior: "smooth" });
+        };
+      }
 
-      // Update hero CTA
+      // Update hero CTA (only exists on landing page)
       const heroCta = document.getElementById("hero-cta");
-      heroCta.textContent = "Start Playing";
-      heroCta.onclick = null;
-      heroCta.href = "#play";
+      if (heroCta) {
+        heroCta.textContent = "Start Playing";
+        heroCta.onclick = null;
+        heroCta.href = "games/index.html";
+      }
     } else {
       const ctaBtn = document.getElementById("cta-btn");
-      ctaBtn.textContent = "Create Free Account";
-      ctaBtn.onclick = () => Auth.showModal("signup");
+      if (ctaBtn) {
+        ctaBtn.textContent = "Create Free Account";
+        ctaBtn.onclick = () => Auth.showModal("signup");
+      }
     }
   }
 
