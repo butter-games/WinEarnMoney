@@ -45,7 +45,18 @@ aws s3 website "s3://${BUCKET_NAME}" \
   --error-document index.html
 
 # Step 3: Set bucket policy for public read
-echo "[3/7] Setting bucket policy (public read)"
+echo "[3/7] Disabling S3 Block Public Access and setting bucket policy"
+
+# Disable block public access FIRST
+aws s3api put-public-access-block \
+  --bucket "${BUCKET_NAME}" \
+  --public-access-block-configuration \
+  "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false"
+
+# Wait a moment for the setting to propagate
+sleep 2
+
+# Then set the public read policy
 aws s3api put-bucket-policy \
   --bucket "${BUCKET_NAME}" \
   --policy "{
@@ -58,12 +69,6 @@ aws s3api put-bucket-policy \
       \"Resource\": \"arn:aws:s3:::${BUCKET_NAME}/*\"
     }]
   }"
-
-# Disable block public access
-aws s3api put-public-access-block \
-  --bucket "${BUCKET_NAME}" \
-  --public-access-block-configuration \
-  "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false"
 
 # Step 4: Upload site files
 echo "[4/7] Uploading site files to S3"
