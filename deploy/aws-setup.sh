@@ -18,7 +18,7 @@
 set -e
 
 # ===== CONFIGURATION - EDIT THESE =====
-DOMAIN="winearnmoney.com"           # ← Replace with your domain
+DOMAIN="playrealmoneygames.com"      # Your domain
 REGION="us-east-1"                   # Must be us-east-1 for CloudFront + ACM
 BUCKET_NAME="${DOMAIN}"
 WWW_BUCKET="www.${DOMAIN}"
