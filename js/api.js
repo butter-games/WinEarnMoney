@@ -74,6 +74,13 @@ window.API = (() => {
     return data.dice;
   }
 
+  async function submitRevealGame(category, score, correctCount, totalRounds) {
+    var data = await request("POST", "/api/game/reveal/submit", {
+      category: category, score: score, correct_count: correctCount, total_rounds: totalRounds,
+    });
+    return data;
+  }
+
   async function getContests() {
     var data = await request("GET", "/api/game/contests");
     return data.contests;
@@ -128,6 +135,7 @@ window.API = (() => {
     signup: signup,
     login: login,
     getProfile: getProfile,
+    submitRevealGame: submitRevealGame,
     logout: logout,
     isAuthenticated: isAuthenticated,
     getGameConfig: getGameConfig,

@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - PlayRealMoneyGames</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --bg: #0a0a1a; --card: #12122a; --surface: #1a1a3e; --primary: #6c5ce7; --accent: #00cec9; --gold: #fdcb6e; --red: #e74c3c; --green: #27ae60; --white: #fff; --text: #dfe6e9; --gray: #636e72; --gray-light: #b2bec3; --radius: 10px; }
+    body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+    .admin-layout { display: flex; min-height: 100vh; }
+    .sidebar { width: 220px; background: var(--card); border-right: 1px solid rgba(255,255,255,0.05); padding: 20px 0; position: fixed; height: 100vh; overflow-y: auto; }
+    .sidebar-logo { padding: 0 20px 20px; font-size: 1.1rem; font-weight: 800; color: var(--white); border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 12px; }
+    .sidebar-logo span { color: var(--accent); }
+    .sidebar a { display: block; padding: 10px 20px; color: var(--gray-light); font-size: 0.85rem; font-weight: 500; text-decoration: none; transition: all 0.2s; }
+    .sidebar a:hover, .sidebar a.active { background: rgba(108,92,231,0.1); color: var(--white); border-right: 3px solid var(--primary); }
+    .main { margin-left: 220px; padding: 24px; flex: 1; }
+    .page-title { font-size: 1.5rem; font-weight: 800; color: var(--white); margin-bottom: 24px; }
+
+    /* Login */
+    .login-box { max-width: 400px; margin: 100px auto; background: var(--card); padding: 40px; border-radius: var(--radius); }
+    .login-box h2 { color: var(--white); margin-bottom: 20px; text-align: center; }
+    .login-box input { width: 100%; padding: 12px; background: var(--surface); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; color: var(--white); margin-bottom: 12px; font-size: 0.9rem; }
+    .login-box button { width: 100%; padding: 12px; background: var(--primary); color: var(--white); border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem; }
+    .login-error { color: var(--red); font-size: 0.85rem; margin-bottom: 12px; display: none; }
+
+    /* Stats */
+    .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: var(--card); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius); padding: 20px; text-align: center; }
+    .stat-value { font-size: 1.75rem; font-weight: 800; color: var(--white); }
+    .stat-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gray); margin-top: 4px; }
+    .stat-card:nth-child(1) .stat-value { color: var(--accent); }
+    .stat-card:nth-child(2) .stat-value { color: var(--gold); }
+
+    /* Tables */
+    .table-card { background: var(--card); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius); overflow: hidden; margin-bottom: 24px; }
+    .table-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .table-header h3 { color: var(--white); font-size: 1rem; }
+    .table-search { padding: 8px 12px; background: var(--surface); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; color: var(--white); font-size: 0.8rem; width: 200px; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; padding: 12px 16px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray); background: var(--surface); }
+    td { padding: 12px 16px; font-size: 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.03); }
+    tr:hover td { background: rgba(108,92,231,0.03); }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; }
+    .badge-green { background: rgba(39,174,96,0.15); color: var(--green); }
+    .badge-red { background: rgba(231,76,60,0.15); color: var(--red); }
+    .badge-yellow { background: rgba(253,203,110,0.15); color: var(--gold); }
+    .badge-blue { background: rgba(108,92,231,0.15); color: var(--primary); }
+
+    /* Config */
+    .config-item { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+    .config-key { font-weight: 600; color: var(--white); font-size: 0.9rem; }
+    .config-value { background: var(--surface); padding: 8px 12px; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; color: var(--accent); font-family: monospace; font-size: 0.8rem; min-width: 300px; }
+    .config-save { padding: 8px 16px; background: var(--primary); color: var(--white); border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem; margin-left: 8px; }
+    .btn-sm { padding: 6px 12px; background: var(--primary); color: var(--white); border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
+    .btn-sm-green { background: var(--green); }
+    .btn-sm-red { background: var(--red); }
+
+    /* Sections */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    @media (max-width: 768px) {
+      .sidebar { width: 60px; } .sidebar a { font-size: 0; padding: 12px; text-align: center; } .sidebar-logo { font-size: 0; padding: 12px; }
+      .main { margin-left: 60px; padding: 16px; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Login -->
+  <div id="admin-login" class="login-box">
+    <h2>Admin Login</h2>
+    <div id="admin-error" class="login-error"></div>
+    <input type="email" id="admin-email" placeholder="Email">
+    <input type="password" id="admin-password" placeholder="Password">
+    <button onclick="AdminPanel.login()">Log In</button>
+  </div>
+
+  <!-- Admin Panel -->
+  <div id="admin-panel" class="admin-layout" style="display:none">
+    <nav class="sidebar">
+      <div class="sidebar-logo">Admin <span>Panel</span></div>
+      <a href="#" class="active" onclick="AdminPanel.showSection('dashboard', this)">Dashboard</a>
+      <a href="#" onclick="AdminPanel.showSection('users', this)">Users</a>
+      <a href="#" onclick="AdminPanel.showSection('contests', this)">Contests</a>
+      <a href="#" onclick="AdminPanel.showSection('withdrawals', this)">Withdrawals</a>
+      <a href="#" onclick="AdminPanel.showSection('ledger', this)">Ledger</a>
+      <a href="#" onclick="AdminPanel.showSection('config', this)">Game Config</a>
+      <a href="#" onclick="AdminPanel.logout()" style="margin-top:auto;color:var(--red)">Logout</a>
+    </nav>
+
+    <main class="main">
+      <!-- Dashboard -->
+      <div id="sec-dashboard" class="section active">
+        <h1 class="page-title">Dashboard</h1>
+        <div class="stats-grid" id="stats-grid"></div>
+      </div>
+
+      <!-- Users -->
+      <div id="sec-users" class="section">
+        <h1 class="page-title">Users</h1>
+        <div class="table-card">
+          <div class="table-header">
+            <h3>All Users</h3>
+            <input class="table-search" placeholder="Search users..." oninput="AdminPanel.searchUsers(this.value)">
+          </div>
+          <table><thead><tr><th>ID</th><th>Username</th><th>Email</th><th>Points</th><th>Games</th><th>Sub</th><th>Joined</th><th>Actions</th></tr></thead>
+          <tbody id="users-table"></tbody></table>
+        </div>
+      </div>
+
+      <!-- Contests -->
+      <div id="sec-contests" class="section">
+        <h1 class="page-title">Contests</h1>
+        <div class="table-card">
+          <div class="table-header"><h3>All Contests</h3><button class="btn-sm" onclick="AdminPanel.seedContests()">Seed Today</button></div>
+          <table><thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Prize</th><th>Players</th><th>Attempts</th><th>Starts</th><th>Ends</th></tr></thead>
+          <tbody id="contests-table"></tbody></table>
+        </div>
+      </div>
+
+      <!-- Withdrawals -->
+      <div id="sec-withdrawals" class="section">
+        <h1 class="page-title">Withdrawals</h1>
+        <div class="table-card">
+          <div class="table-header"><h3>All Withdrawals</h3>
+            <select onchange="AdminPanel.loadWithdrawals(this.value)" style="padding:6px;background:var(--surface);border:1px solid rgba(255,255,255,0.08);border-radius:4px;color:var(--white);font-size:0.8rem">
+              <option value="">All</option><option value="processing">Processing</option><option value="completed">Completed</option><option value="failed">Failed</option>
+            </select>
+          </div>
+          <table><thead><tr><th>ID</th><th>User</th><th>Amount</th><th>Method</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="withdrawals-table"></tbody></table>
+        </div>
+      </div>
+
+      <!-- Ledger -->
+      <div id="sec-ledger" class="section">
+        <h1 class="page-title">Ledger</h1>
+        <div class="table-card">
+          <div class="table-header"><h3>Transaction Log</h3></div>
+          <table><thead><tr><th>ID</th><th>User</th><th>Type</th><th>Amount</th><th>Balance</th><th>Description</th><th>Date</th></tr></thead>
+          <tbody id="ledger-table"></tbody></table>
+        </div>
+      </div>
+
+      <!-- Config -->
+      <div id="sec-config" class="section">
+        <h1 class="page-title">Game Config</h1>
+        <div class="table-card">
+          <div class="table-header"><h3>Server-controlled values</h3></div>
+          <div id="config-list"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    var API_URL = "https://api.playrealmoneygames.com";
+    var token = localStorage.getItem("admin_token");
+
+    var AdminPanel = {
+      async request(method, path, body) {
+        var headers = { "Content-Type": "application/json" };
+        if (token) headers["Authorization"] = "Bearer " + token;
+        var opts = { method: method, headers: headers };
+        if (body) opts.body = JSON.stringify(body);
+        var res = await fetch(API_URL + path, opts);
+        var data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed");
+        return data;
+      },
+
+      async login() {
+        var email = document.getElementById("admin-email").value;
+        var password = document.getElementById("admin-password").value;
+        try {
+          var data = await fetch(API_URL + "/api/auth/login", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: email, password: password })
+          }).then(function(r) { return r.json(); });
+
+          if (data.error) throw new Error(data.error);
+          token = data.token;
+          localStorage.setItem("admin_token", token);
+
+          // Test admin access
+          await this.request("GET", "/api/admin/dashboard");
+          document.getElementById("admin-login").style.display = "none";
+          document.getElementById("admin-panel").style.display = "flex";
+          this.loadDashboard();
+        } catch (err) {
+          var errEl = document.getElementById("admin-error");
+          errEl.textContent = err.message;
+          errEl.style.display = "block";
+        }
+      },
+
+      logout() {
+        localStorage.removeItem("admin_token");
+        token = null;
+        document.getElementById("admin-login").style.display = "block";
+        document.getElementById("admin-panel").style.display = "none";
+      },
+
+      showSection(name, el) {
+        document.querySelectorAll(".section").forEach(function(s) { s.classList.remove("active"); });
+        document.querySelectorAll(".sidebar a").forEach(function(a) { a.classList.remove("active"); });
+        document.getElementById("sec-" + name).classList.add("active");
+        if (el) el.classList.add("active");
+        if (name === "dashboard") this.loadDashboard();
+        if (name === "users") this.loadUsers();
+        if (name === "contests") this.loadContests();
+        if (name === "withdrawals") this.loadWithdrawals();
+        if (name === "ledger") this.loadLedger();
+        if (name === "config") this.loadConfig();
+      },
+
+      async loadDashboard() {
+        try {
+          var data = await this.request("GET", "/api/admin/dashboard");
+          var s = data.stats;
+          document.getElementById("stats-grid").innerHTML =
+            this.statCard(s.total_users, "Total Users") +
+            this.statCard(s.subscribers, "Subscribers") +
+            this.statCard(s.new_users_24h, "New (24h)") +
+            this.statCard(s.active_contests, "Active Contests") +
+            this.statCard("$" + parseFloat(s.pending_withdrawals || 0).toFixed(2), "Pending Withdrawals");
+        } catch (err) { console.error(err); }
+      },
+
+      statCard(value, label) {
+        return '<div class="stat-card"><div class="stat-value">' + value + '</div><div class="stat-label">' + label + '</div></div>';
+      },
+
+      async loadUsers(search) {
+        try {
+          var q = search ? "?search=" + encodeURIComponent(search) : "";
+          var data = await this.request("GET", "/api/admin/users" + q);
+          var tbody = document.getElementById("users-table");
+          tbody.innerHTML = data.users.map(function(u) {
+            return "<tr><td>" + u.id + "</td><td>" + u.username + "</td><td>" + u.email + "</td><td>" + u.points + "</td><td>" + u.games_played +
+              '</td><td>' + (u.subscribed ? '<span class="badge badge-green">PRO</span>' : '<span class="badge badge-yellow">FREE</span>') +
+              "</td><td>" + new Date(u.created_at).toLocaleDateString() +
+              '</td><td><button class="btn-sm" onclick="AdminPanel.toggleSub(' + u.id + ',' + !u.subscribed + ')">Toggle Sub</button></td></tr>';
+          }).join("");
+        } catch (err) { console.error(err); }
+      },
+
+      searchUsers: debounce(function(val) { AdminPanel.loadUsers(val); }, 300),
+
+      async toggleSub(userId, subscribed) {
+        try {
+          await this.request("PATCH", "/api/admin/users/" + userId, { subscribed: subscribed });
+          this.loadUsers();
+        } catch (err) { alert(err.message); }
+      },
+
+      async loadContests() {
+        try {
+          var data = await this.request("GET", "/api/admin/contests");
+          var tbody = document.getElementById("contests-table");
+          tbody.innerHTML = data.contests.map(function(c) {
+            var now = new Date();
+            var active = new Date(c.starts_at) <= now && new Date(c.ends_at) > now;
+            return "<tr><td>" + c.id + "</td><td>" + c.name + "</td><td>" +
+              '<span class="badge ' + (c.type === "free" ? "badge-green" : "badge-blue") + '">' + c.type + "</span></td>" +
+              "<td>$" + parseFloat(c.prize_pool).toFixed(0) + "</td><td>" + (c.player_count || 0) + "/" + c.max_players +
+              "</td><td>" + (c.total_attempts || 0) + "</td><td>" + new Date(c.starts_at).toLocaleString() +
+              "</td><td>" + (active ? '<span class="badge badge-green">LIVE</span>' : new Date(c.ends_at).toLocaleString()) + "</td></tr>";
+          }).join("");
+        } catch (err) { console.error(err); }
+      },
+
+      async seedContests() {
+        alert("Run on server: cd ~/WinEarnMoney/server && node src/db/seed.js");
+      },
+
+      async loadWithdrawals(status) {
+        try {
+          var q = status ? "?status=" + status : "";
+          var data = await this.request("GET", "/api/admin/withdrawals" + q);
+          var tbody = document.getElementById("withdrawals-table");
+          tbody.innerHTML = data.withdrawals.map(function(w) {
+            var statusBadge = w.status === "completed" ? "badge-green" : w.status === "processing" ? "badge-yellow" : "badge-red";
+            return "<tr><td>" + w.id + "</td><td>" + w.username + "</td><td>$" + parseFloat(w.amount).toFixed(2) +
+              "</td><td>" + w.method + '</td><td><span class="badge ' + statusBadge + '">' + w.status + "</span></td>" +
+              "<td>" + new Date(w.created_at).toLocaleDateString() + "</td><td>" +
+              (w.status === "processing" ? '<button class="btn-sm btn-sm-green" onclick="AdminPanel.updateWithdrawal(' + w.id + ',\'completed\')">Approve</button> ' +
+                '<button class="btn-sm btn-sm-red" onclick="AdminPanel.updateWithdrawal(' + w.id + ',\'failed\')">Reject</button>' : "-") + "</td></tr>";
+          }).join("");
+        } catch (err) { console.error(err); }
+      },
+
+      async updateWithdrawal(id, status) {
+        try {
+          await this.request("PATCH", "/api/admin/withdrawals/" + id, { status: status });
+          this.loadWithdrawals();
+        } catch (err) { alert(err.message); }
+      },
+
+      async loadLedger() {
+        try {
+          var data = await this.request("GET", "/api/admin/ledger");
+          var tbody = document.getElementById("ledger-table");
+          tbody.innerHTML = data.entries.map(function(e) {
+            var amtClass = e.amount >= 0 ? "badge-green" : "badge-red";
+            return "<tr><td>" + e.id + "</td><td>" + e.username + "</td><td>" +
+              '<span class="badge badge-blue">' + e.type + "</span></td>" +
+              '<td><span class="badge ' + amtClass + '">' + (e.amount >= 0 ? "+" : "") + e.amount + "</span></td>" +
+              "<td>" + e.balance_after + "</td><td style='max-width:200px;overflow:hidden;text-overflow:ellipsis'>" + (e.description || "") +
+              "</td><td>" + new Date(e.created_at).toLocaleString() + "</td></tr>";
+          }).join("");
+        } catch (err) { console.error(err); }
+      },
+
+      async loadConfig() {
+        try {
+          var data = await this.request("GET", "/api/admin/config");
+          var list = document.getElementById("config-list");
+          list.innerHTML = data.config.map(function(c) {
+            return '<div class="config-item"><span class="config-key">' + c.key + '</span>' +
+              '<div><input class="config-value" id="config-' + c.key + '" value=\'' + JSON.stringify(c.value) + '\'>' +
+              '<button class="config-save" onclick="AdminPanel.saveConfig(\'' + c.key + '\')">Save</button></div></div>';
+          }).join("");
+        } catch (err) { console.error(err); }
+      },
+
+      async saveConfig(key) {
+        try {
+          var val = document.getElementById("config-" + key).value;
+          var parsed = JSON.parse(val);
+          await this.request("PUT", "/api/admin/config/" + key, { value: parsed });
+          alert("Saved!");
+        } catch (err) { alert(err.message); }
+      },
+    };
+
+    function debounce(fn, ms) {
+      var t; return function() { var a = arguments; clearTimeout(t); t = setTimeout(function() { fn.apply(null, a); }, ms); };
+    }
+
+    // Auto-login if token exists
+    if (token) {
+      AdminPanel.request("GET", "/api/admin/dashboard").then(function() {
+        document.getElementById("admin-login").style.display = "none";
+        document.getElementById("admin-panel").style.display = "flex";
+        AdminPanel.loadDashboard();
+      }).catch(function() { AdminPanel.logout(); });
+    }
+  </script>
+</body>
+</html>

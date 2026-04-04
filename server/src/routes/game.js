@@ -207,4 +207,56 @@ router.get("/contests/:id/leaderboard", authRequired, async (req, res) => {
   }
 });
 
+// POST /api/game/reveal/submit - Submit reveal game score
+router.post("/reveal/submit", authRequired, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const { category, score, correct_count, total_rounds } = req.body;
+
+    if (!category || score === undefined) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ error: "Category and score are required" });
+    }
+
+    if (score <= 0) {
+      await client.query("COMMIT");
+      return res.json({ points_awarded: 0, balance: 0 });
+    }
+
+    // Award points
+    await client.query(
+      "UPDATE users SET points = points + $1, games_played = games_played + 1 WHERE id = $2",
+      [score, req.userId]
+    );
+
+    const balResult = await client.query("SELECT points FROM users WHERE id = $1", [req.userId]);
+    const balanceAfter = balResult.rows[0].points;
+
+    // Log to ledger
+    await client.query(
+      `INSERT INTO ledger (user_id, type, amount, balance_after, description, metadata)
+       VALUES ($1, 'game_win', $2, $3, $4, $5)`,
+      [
+        req.userId,
+        score,
+        balanceAfter,
+        `Reveal ${category} - ${correct_count}/${total_rounds} correct (+${score} pts)`,
+        JSON.stringify({ category, correct_count, total_rounds }),
+      ]
+    );
+
+    await client.query("COMMIT");
+
+    res.json({ points_awarded: score, balance: balanceAfter });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("Reveal submit error:", err);
+    res.status(500).json({ error: "Server error" });
+  } finally {
+    client.release();
+  }
+});
+
 module.exports = router;

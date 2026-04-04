@@ -291,18 +291,25 @@ const RevealGame = (() => {
     const nextBtn = document.getElementById("next-btn");
     nextBtn.textContent = currentRound >= gameOrder.length ? "See Results" : `Next ${itemLabel}`;
 
-    if (correct && points > 0 && typeof Auth !== "undefined" && Auth.isLoggedIn()) {
-      const catName = category ? category.title : "Game";
-      Auth.addPoints(points, Ledger.TYPES.GAME_WIN, `Reveal ${catName} - guessed ${currentItem.name} (+${points} pts)`);
-    }
   }
 
-  function showGameOver() {
+  async function showGameOver() {
     document.getElementById("game-over").classList.remove("hidden");
     document.getElementById("final-score").textContent = totalScore;
     document.getElementById("correct-count").textContent = correctCount;
     document.getElementById("skipped-count").textContent = skippedCount;
     document.getElementById("wrong-count").textContent = wrongCount;
+
+    // Submit total score to server
+    if (totalScore > 0 && typeof API !== "undefined" && API.isAuthenticated()) {
+      try {
+        var catName = category ? category.title : "Game";
+        await API.submitRevealGame(catName, totalScore, correctCount, gameOrder.length);
+        Auth.addPoints(0); // refresh profile
+      } catch (err) {
+        console.warn("Failed to submit reveal score:", err);
+      }
+    }
   }
 
   function shuffleArray(arr) {
