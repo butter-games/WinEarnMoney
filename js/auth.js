@@ -77,7 +77,9 @@ window.Auth = (() => {
     }
 
     try {
-      cachedUser = await API.signup(username, email, password);
+      // Check for referral code in URL
+      var refCode = new URLSearchParams(window.location.search).get("ref") || "";
+      cachedUser = await API.signup(username, email, password, refCode);
       hideModal();
       updateUI();
       showWelcomeDialog(username);

@@ -38,8 +38,10 @@ window.API = (() => {
   }
 
   // Auth
-  async function signup(username, email, password) {
-    var data = await request("POST", "/api/auth/signup", { username: username, email: email, password: password });
+  async function signup(username, email, password, referralCode) {
+    var body = { username: username, email: email, password: password };
+    if (referralCode) body.referral_code = referralCode;
+    var data = await request("POST", "/api/auth/signup", body);
     setToken(data.token);
     return data.user;
   }
@@ -48,6 +50,11 @@ window.API = (() => {
     var data = await request("POST", "/api/auth/login", { email: email, password: password });
     setToken(data.token);
     return data.user;
+  }
+
+  async function getReferrals() {
+    var data = await request("GET", "/api/auth/referrals");
+    return data;
   }
 
   async function getProfile() {
@@ -135,6 +142,7 @@ window.API = (() => {
     signup: signup,
     login: login,
     getProfile: getProfile,
+    getReferrals: getReferrals,
     submitRevealGame: submitRevealGame,
     logout: logout,
     isAuthenticated: isAuthenticated,

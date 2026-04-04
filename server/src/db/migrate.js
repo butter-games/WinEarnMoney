@@ -93,11 +93,30 @@ CREATE INDEX IF NOT EXISTS idx_contest_attempts_user ON contest_attempts(user_id
 CREATE INDEX IF NOT EXISTS idx_contest_leaderboard_contest ON contest_leaderboard(contest_id, best_score DESC);
 CREATE INDEX IF NOT EXISTS idx_withdrawals_user ON withdrawals(user_id, created_at DESC);
 
+-- Referrals
+CREATE TABLE IF NOT EXISTS referrals (
+  id SERIAL PRIMARY KEY,
+  referrer_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  referred_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  bonus_awarded BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(referred_id)
+);
+
+-- Add referral_code to users if not exists
+DO $$ BEGIN
+  ALTER TABLE users ADD COLUMN referral_code VARCHAR(10) UNIQUE;
+EXCEPTION WHEN duplicate_column THEN NULL;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals(referrer_id);
+
 -- Insert default game config
 INSERT INTO game_config (key, value) VALUES
   ('scoring', '{"basePointsPerQuestion": 6, "decayPerSecond": 1, "decayStartAfter": 0, "minPoints": 0}'),
   ('points_to_dollar', '{"rate": 100}'),
-  ('min_withdrawal', '{"amount": 1.00}')
+  ('min_withdrawal', '{"amount": 1.00}'),
+  ('referral', '{"bonus_referrer": 50, "bonus_referred": 25}')
 ON CONFLICT (key) DO NOTHING;
 `;
 

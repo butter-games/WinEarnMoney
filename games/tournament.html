@@ -188,6 +188,7 @@
           <p class="tm-final-msg" id="tm-final-msg">Replay to improve your score!</p>
           <button class="btn btn-primary btn-lg" id="tm-replay-btn" onclick="Tournament.replay()">Replay Contest</button>
           <button class="btn btn-outline btn-lg" onclick="Tournament.viewLeaderboard()">View Leaderboard</button>
+          <button class="btn btn-outline btn-lg" onclick="Share.score(document.getElementById('tm-final-score').textContent, 'Champs League Tournament')">Share Score</button>
           <a href="tournament.html" class="btn btn-outline btn-lg tm-back-link">Back to Contests</a>
         </div>
       </div>
@@ -308,6 +309,7 @@
   <script src="../js/api.js"></script>
   <script src="../js/ledger.js"></script>
   <script src="../js/auth.js"></script>
+  <script src="../js/share.js"></script>
   <script src="../js/tournament.js"></script>
 </body>
 </html>

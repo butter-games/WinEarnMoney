@@ -1,3 +1,8 @@
+// Register service worker
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js").catch(function() {});
+}
+
 // Landing page enhancements (scroll effects only - menu handled by auth.js)
 document.addEventListener("DOMContentLoaded", function() {
   // Navbar background on scroll
