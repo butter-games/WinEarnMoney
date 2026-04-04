@@ -1,39 +1,20 @@
 window.Auth = (() => {
-  const STORAGE_KEY = "wem_users";
-  const SESSION_KEY = "wem_session";
-
-  function getUsers() {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-  }
-
-  function saveUsers(users) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
-  }
-
-  function getSession() {
-    return JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
-  }
-
-  function saveSession(user) {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(user));
-  }
-
-  function clearSession() {
-    localStorage.removeItem(SESSION_KEY);
-  }
+  // Local cache of user data (refreshed from API)
+  var cachedUser = null;
 
   function isLoggedIn() {
-    return getSession() !== null;
+    return API.isAuthenticated();
   }
 
   function currentUser() {
-    return getSession();
+    return cachedUser;
   }
 
   function getInitials(name) {
+    if (!name) return "?";
     return name
       .split(" ")
-      .map((w) => w[0])
+      .map(function(w) { return w[0]; })
       .join("")
       .toUpperCase()
       .slice(0, 2);
@@ -83,10 +64,10 @@ window.Auth = (() => {
   }
 
   // Auth actions
-  function signup(e) {
+  async function signup(e) {
     e.preventDefault();
-    var name = document.getElementById("signup-name").value.trim();
-    var email = document.getElementById("signup-email").value.trim().toLowerCase();
+    var username = document.getElementById("signup-name").value.trim();
+    var email = document.getElementById("signup-email").value.trim();
     var password = document.getElementById("signup-password").value;
     var confirm = document.getElementById("signup-confirm").value;
 
@@ -95,27 +76,14 @@ window.Auth = (() => {
       return;
     }
 
-    var users = getUsers();
-    if (users[email]) {
-      showError("signup-error", "An account with this email already exists.");
-      return;
+    try {
+      cachedUser = await API.signup(username, email, password);
+      hideModal();
+      updateUI();
+      showWelcomeDialog(username);
+    } catch (err) {
+      showError("signup-error", err.message);
     }
-
-    var user = {
-      name: name,
-      email: email,
-      password: password,
-      points: 0,
-      gamesPlayed: 0,
-      joined: new Date().toISOString(),
-    };
-
-    users[email] = user;
-    saveUsers(users);
-    saveSession(user);
-    hideModal();
-    updateUI();
-    showWelcomeDialog(name);
   }
 
   function showWelcomeDialog(name) {
@@ -162,47 +130,49 @@ window.Auth = (() => {
     dialog.classList.remove("hidden");
   }
 
-  function login(e) {
+  async function login(e) {
     e.preventDefault();
-    var email = document.getElementById("login-email").value.trim().toLowerCase();
+    var email = document.getElementById("login-email").value.trim();
     var password = document.getElementById("login-password").value;
 
-    var users = getUsers();
-    var user = users[email];
-
-    if (!user || user.password !== password) {
-      showError("login-error", "Invalid email or password.");
-      return;
+    try {
+      cachedUser = await API.login(email, password);
+      hideModal();
+      updateUI();
+    } catch (err) {
+      showError("login-error", err.message);
     }
-
-    saveSession(user);
-    hideModal();
-    updateUI();
   }
 
   function logout() {
-    clearSession();
+    API.logout();
+    cachedUser = null;
     hideUserMenu();
     updateUI();
   }
 
-  function showProfile() {
-    var user = currentUser();
-    if (!user) return;
+  async function showProfile() {
+    try {
+      cachedUser = await API.getProfile();
+    } catch (err) {
+      console.warn("Failed to fetch profile:", err);
+    }
+
+    if (!cachedUser) return;
 
     var el;
     el = document.getElementById("profile-name");
-    if (el) el.textContent = user.name;
+    if (el) el.textContent = cachedUser.username;
     el = document.getElementById("profile-email");
-    if (el) el.textContent = user.email;
+    if (el) el.textContent = cachedUser.email;
     el = document.getElementById("profile-points");
-    if (el) el.textContent = user.points.toLocaleString();
+    if (el) el.textContent = (cachedUser.points || 0).toLocaleString();
     el = document.getElementById("profile-games");
-    if (el) el.textContent = user.gamesPlayed.toLocaleString();
+    if (el) el.textContent = (cachedUser.games_played || 0).toLocaleString();
     el = document.getElementById("profile-joined");
-    if (el) el.textContent = new Date(user.joined).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+    if (el) el.textContent = new Date(cachedUser.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" });
     el = document.getElementById("profile-avatar");
-    if (el) el.textContent = getInitials(user.name);
+    if (el) el.textContent = getInitials(cachedUser.username);
 
     showModal("profile");
     hideUserMenu();
@@ -228,53 +198,38 @@ window.Auth = (() => {
     if (menu) menu.classList.add("hidden");
   }
 
-  function addPoints(pts, source, description) {
-    var user = currentUser();
-    if (!user) return;
-
-    user.points += pts;
-    user.gamesPlayed += 1;
-    saveSession(user);
-
-    var users = getUsers();
-    if (users[user.email]) {
-      users[user.email].points = user.points;
-      users[user.email].gamesPlayed = user.gamesPlayed;
-      saveUsers(users);
+  async function addPoints(pts, source, description) {
+    // Points are now managed server-side via contest submission
+    // This function just refreshes the cached user
+    try {
+      cachedUser = await API.getProfile();
+      updatePointsDisplay();
+    } catch (err) {
+      console.warn("Failed to refresh points:", err);
     }
-
-    if (typeof Ledger !== "undefined" && pts !== 0) {
-      var type = source || Ledger.TYPES.GAME_WIN;
-      var desc = description || "Earned " + pts + " points";
-      Ledger.addEntry(type, pts, desc);
-    }
-
-    updatePointsDisplay();
   }
 
   function updatePointsDisplay() {
-    var user = currentUser();
     var el = document.getElementById("nav-points");
-    if (user && el) {
-      el.textContent = user.points.toLocaleString() + " pts";
+    if (cachedUser && el) {
+      el.textContent = (cachedUser.points || 0).toLocaleString() + " pts";
     }
   }
 
   function updateUI() {
     try {
       var loggedIn = isLoggedIn();
-      var user = currentUser();
 
       var navAuth = document.querySelector(".nav-auth");
       var navUser = document.getElementById("nav-user");
       if (navAuth) navAuth.classList.toggle("hidden", loggedIn);
       if (navUser) navUser.classList.toggle("hidden", !loggedIn);
 
-      if (loggedIn && user) {
+      if (loggedIn && cachedUser) {
         var avatar = document.getElementById("nav-avatar");
         var menuName = document.getElementById("user-menu-name");
-        if (avatar) avatar.textContent = getInitials(user.name);
-        if (menuName) menuName.textContent = user.name;
+        if (avatar) avatar.textContent = getInitials(cachedUser.username);
+        if (menuName) menuName.textContent = cachedUser.username;
         updatePointsDisplay();
 
         var ctaBtn = document.getElementById("cta-btn");
@@ -302,9 +257,23 @@ window.Auth = (() => {
     }
   }
 
-  // Bind all events on DOMContentLoaded - no inline onclick needed
+  // Load user profile on page load if authenticated
+  async function loadUser() {
+    if (isLoggedIn()) {
+      try {
+        cachedUser = await API.getProfile();
+      } catch (err) {
+        // Token expired or invalid
+        API.logout();
+        cachedUser = null;
+      }
+    }
+    updateUI();
+  }
+
+  // Bind all events on DOMContentLoaded
   function bindEvents() {
-    // Avatar click → toggle menu
+    // Avatar click
     var avatar = document.getElementById("nav-avatar");
     if (avatar) {
       avatar.addEventListener("click", function(e) {
@@ -313,13 +282,12 @@ window.Auth = (() => {
       });
     }
 
-    // User menu links with data-action
+    // User menu links
     var menu = document.getElementById("user-menu");
     if (menu) {
       menu.addEventListener("click", function(e) {
         var link = e.target.closest("a");
         if (!link) return;
-
         var action = link.getAttribute("data-action");
         if (action === "profile") {
           e.preventDefault();
@@ -328,11 +296,10 @@ window.Auth = (() => {
           e.preventDefault();
           logout();
         }
-        // Other links (earnings, withdraw, subscription) navigate normally
       });
     }
 
-    // All [data-auth] buttons anywhere on the page (nav, CTA, login prompts)
+    // Auth buttons
     document.querySelectorAll("[data-auth]").forEach(function(btn) {
       btn.addEventListener("click", function(e) {
         e.preventDefault();
@@ -340,17 +307,13 @@ window.Auth = (() => {
       });
     });
 
-    // Login form submit
+    // Login form
     var loginForm = document.querySelector("#login-form form");
-    if (loginForm) {
-      loginForm.addEventListener("submit", login);
-    }
+    if (loginForm) loginForm.addEventListener("submit", login);
 
-    // Signup form submit
+    // Signup form
     var signupForm = document.querySelector("#signup-form form");
-    if (signupForm) {
-      signupForm.addEventListener("submit", signup);
-    }
+    if (signupForm) signupForm.addEventListener("submit", signup);
 
     // Switch form links
     document.querySelectorAll("[data-switch-form]").forEach(function(link) {
@@ -360,30 +323,23 @@ window.Auth = (() => {
       });
     });
 
-    // Auth modal close button (only the one inside #auth-modal)
+    // Auth modal close
     var authModal = document.getElementById("auth-modal");
     if (authModal) {
       var closeBtn = authModal.querySelector(".modal-close");
       if (closeBtn) closeBtn.addEventListener("click", hideModal);
-
-      // Profile view close button
       var profileClose = authModal.querySelector("#profile-view .btn-outline");
       if (profileClose) profileClose.addEventListener("click", hideModal);
     }
 
-    // Close modal on overlay click, close menu on outside click
+    // Close on outside click
     document.addEventListener("click", function(e) {
-      // Only close auth modal overlay (not other overlays like sub-prompt)
-      if (e.target.id === "auth-modal") {
-        hideModal();
-      }
-      // Close user menu when clicking outside
+      if (e.target.id === "auth-modal") hideModal();
       if (!e.target.closest("#nav-avatar") && !e.target.closest("#user-menu")) {
         hideUserMenu();
       }
     });
 
-    // Close modal on Escape
     document.addEventListener("keydown", function(e) {
       if (e.key === "Escape") {
         hideModal();
@@ -391,7 +347,7 @@ window.Auth = (() => {
       }
     });
 
-    // Mobile hamburger menu toggle (works on ALL pages)
+    // Mobile menu
     var mobileBtn = document.querySelector(".mobile-menu-btn");
     var navLinks = document.querySelector(".nav-links");
     if (mobileBtn && navLinks) {
@@ -399,13 +355,11 @@ window.Auth = (() => {
         e.stopPropagation();
         navLinks.classList.toggle("nav-open");
       });
-      // Close mobile menu when a nav link is clicked
       navLinks.querySelectorAll("a").forEach(function(link) {
         link.addEventListener("click", function() {
           navLinks.classList.remove("nav-open");
         });
       });
-      // Close mobile menu when clicking outside
       document.addEventListener("click", function(e) {
         if (!e.target.closest(".mobile-menu-btn") && !e.target.closest(".nav-links")) {
           navLinks.classList.remove("nav-open");
@@ -413,11 +367,10 @@ window.Auth = (() => {
       });
     }
 
-    // Run updateUI
-    updateUI();
+    // Load user and update UI
+    loadUser();
   }
 
-  // Init
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", bindEvents);
   } else {

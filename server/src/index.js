@@ -26,6 +26,11 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
+// Root route
+app.get("/", (req, res) => {
+  res.json({ name: "PlayRealMoneyGames API", status: "ok" });
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

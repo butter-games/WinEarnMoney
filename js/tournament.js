@@ -256,9 +256,19 @@ const Tournament = (() => {
   }
 
   // ===== DICE MECHANIC =====
-  function rollDice() {
+  async function rollDice() {
     if (diceRolled) return;
     diceRolled = true;
+
+    // Get dice value from server (prevents cheating)
+    var serverDice;
+    try {
+      if (typeof API !== "undefined" && API.isAuthenticated()) {
+        serverDice = await API.rollDice();
+      }
+    } catch (err) {
+      console.warn("Server dice failed, using local:", err);
+    }
 
     const diceEl = document.getElementById("tm-dice");
     const faceEl = document.getElementById("tm-dice-face");
@@ -272,8 +282,8 @@ const Tournament = (() => {
       rollCount++;
       if (rollCount > 12) {
         clearInterval(rollInterval);
-        // Final value
-        diceValue = Math.floor(Math.random() * 6) + 1;
+        // Use server dice value if available, otherwise local
+        diceValue = serverDice || (Math.floor(Math.random() * 6) + 1);
         faceEl.textContent = getDiceFace(diceValue);
         diceEl.classList.remove("tm-dice-rolling");
         diceEl.classList.add("tm-dice-landed");
