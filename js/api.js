@@ -138,6 +138,22 @@ window.API = (() => {
     return data.withdrawals;
   }
 
+  // Subscription
+  async function createCheckout(plan) {
+    var data = await request("POST", "/api/subscription/checkout", { plan: plan });
+    return data;
+  }
+
+  async function createPortal() {
+    var data = await request("POST", "/api/subscription/portal");
+    return data;
+  }
+
+  async function getSubscriptionStatus() {
+    var data = await request("GET", "/api/subscription/status");
+    return data;
+  }
+
   return {
     signup: signup,
     login: login,
@@ -155,5 +171,8 @@ window.API = (() => {
     getLedger: getLedger,
     withdraw: withdraw,
     getWithdrawals: getWithdrawals,
+    createCheckout: createCheckout,
+    createPortal: createPortal,
+    getSubscriptionStatus: getSubscriptionStatus,
   };
 })();

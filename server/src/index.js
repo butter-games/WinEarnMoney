@@ -6,9 +6,14 @@ const authRoutes = require("./routes/auth");
 const gameRoutes = require("./routes/game");
 const walletRoutes = require("./routes/wallet");
 const adminRoutes = require("./routes/admin");
+const subscriptionRoutes = require("./routes/subscription");
+const { handleWebhook } = require("./routes/subscription");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Stripe webhook needs raw body - must be before express.json()
+app.post("/api/subscription/webhook", express.raw({ type: "application/json" }), handleWebhook);
 
 // Middleware
 app.use(cors({
@@ -22,6 +27,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/game", gameRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/subscription", subscriptionRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {

@@ -247,26 +247,71 @@
   <script src="../js/ledger.js"></script>
   <script src="../js/auth.js"></script>
   <script>
-    const Subscription = {
-      subscribe(plan) {
+    var Subscription = {
+      async subscribe(plan) {
         if (!Auth.isLoggedIn()) {
           Auth.showModal("signup");
           return;
         }
-        // Simulate subscription (in production, integrate Stripe/PayPal)
-        const user = Auth.currentUser();
-        user.subscribed = true;
-        user.plan = plan;
-        localStorage.setItem("wem_session", JSON.stringify(user));
-        const users = JSON.parse(localStorage.getItem("wem_users") || "{}");
-        if (users[user.email]) {
-          users[user.email].subscribed = true;
-          users[user.email].plan = plan;
-          localStorage.setItem("wem_users", JSON.stringify(users));
+
+        try {
+          var btn = document.getElementById("sub-" + plan + "-btn");
+          if (btn) { btn.disabled = true; btn.textContent = "Redirecting..."; }
+
+          var data = await API.createCheckout(plan);
+          if (data.url) {
+            window.location.href = data.url;
+          } else {
+            alert("Failed to start checkout. Please try again.");
+            if (btn) { btn.disabled = false; btn.textContent = plan === "monthly" ? "Subscribe - $1.99/month" : "Subscribe - $14.99/year"; }
+          }
+        } catch (err) {
+          alert(err.message || "Checkout failed");
+          var btn2 = document.getElementById("sub-" + plan + "-btn");
+          if (btn2) { btn2.disabled = false; btn2.textContent = plan === "monthly" ? "Subscribe - $1.99/month" : "Subscribe - $14.99/year"; }
         }
-        document.getElementById("sub-success-modal").classList.remove("hidden");
+      },
+
+      async manageSubscription() {
+        try {
+          var data = await API.createPortal();
+          if (data.url) window.location.href = data.url;
+        } catch (err) {
+          alert(err.message || "Failed to open subscription management");
+        }
+      },
+
+      async checkStatus() {
+        // Check for success/cancelled URL params
+        var params = new URLSearchParams(window.location.search);
+        if (params.get("success") === "true") {
+          document.getElementById("sub-success-modal").classList.remove("hidden");
+          // Refresh user profile
+          if (Auth.addPoints) Auth.addPoints(0);
+          // Clean URL
+          window.history.replaceState({}, "", window.location.pathname);
+        }
+
+        // Check if already subscribed
+        if (API.isAuthenticated()) {
+          try {
+            var status = await API.getSubscriptionStatus();
+            if (status.subscribed) {
+              // Show manage button instead of subscribe
+              var monthlyBtn = document.getElementById("sub-monthly-btn");
+              if (monthlyBtn) {
+                monthlyBtn.textContent = "Manage Subscription";
+                monthlyBtn.onclick = function() { Subscription.manageSubscription(); };
+              }
+            }
+          } catch (err) {}
+        }
       }
     };
+
+    document.addEventListener("DOMContentLoaded", function() {
+      setTimeout(function() { Subscription.checkStatus(); }, 1000);
+    });
   </script>
 </body>
 </html>
