@@ -36,7 +36,8 @@ router.get("/contests", authRequired, async (req, res) => {
     const now = new Date();
     const result = await pool.query(
       `SELECT c.*,
-              (SELECT COUNT(*) FROM contest_leaderboard cl WHERE cl.contest_id = c.id) as player_count
+              (SELECT COUNT(*) FROM contest_leaderboard cl WHERE cl.contest_id = c.id) +
+              (SELECT COUNT(*) FROM contest_seed_users cs WHERE cs.contest_id = c.id) as player_count
        FROM contests c
        WHERE c.ends_at > $1
        ORDER BY c.is_daily DESC, c.starts_at ASC`,
@@ -129,9 +130,10 @@ router.post("/contests/:id/submit", authRequired, async (req, res) => {
       [req.userId, contestId, score, 1]
     );
 
-    // Award points for improvement only
+    // Award points for improvement only (must meet min score threshold)
+    const minScore = contest.min_score_for_points || 0;
     const improvement = Math.max(0, score - currentBest);
-    if (improvement > 0) {
+    if (improvement > 0 && score >= minScore) {
       await client.query(
         "UPDATE users SET points = points + $1, games_played = games_played + 1 WHERE id = $2",
         [improvement, req.userId]
@@ -177,29 +179,44 @@ router.get("/contests/:id/leaderboard", authRequired, async (req, res) => {
   try {
     const contestId = parseInt(req.params.id);
 
-    const result = await pool.query(
-      `SELECT cl.best_score, cl.attempts, u.username
+    // Get real players
+    const realResult = await pool.query(
+      `SELECT cl.best_score as score, u.username, 'real' as type
        FROM contest_leaderboard cl
        JOIN users u ON u.id = cl.user_id
-       WHERE cl.contest_id = $1
-       ORDER BY cl.best_score DESC
-       LIMIT 20`,
+       WHERE cl.contest_id = $1`,
       [contestId]
     );
 
-    // Get user's rank
-    const rankResult = await pool.query(
-      `SELECT COUNT(*) + 1 as rank FROM contest_leaderboard
-       WHERE contest_id = $1 AND best_score > (
-         SELECT COALESCE(best_score, 0) FROM contest_leaderboard
-         WHERE contest_id = $1 AND user_id = $2
-       )`,
-      [contestId, req.userId]
+    // Get seed users
+    const seedResult = await pool.query(
+      `SELECT score, username, 'seed' as type
+       FROM contest_seed_users WHERE contest_id = $1`,
+      [contestId]
     );
 
+    // Merge and sort
+    const combined = [...realResult.rows, ...seedResult.rows]
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 20)
+      .map((p, i) => ({
+        username: p.username,
+        best_score: p.score,
+        rank: i + 1,
+      }));
+
+    // Get user's rank
+    const userScore = realResult.rows.find((r) => true); // will check below
+    const myScoreResult = await pool.query(
+      "SELECT best_score FROM contest_leaderboard WHERE contest_id = $1 AND user_id = $2",
+      [contestId, req.userId]
+    );
+    const myScore = myScoreResult.rows[0]?.best_score || 0;
+    const myRank = combined.filter((p) => p.best_score > myScore).length + 1;
+
     res.json({
-      leaderboard: result.rows,
-      my_rank: parseInt(rankResult.rows[0]?.rank || 0),
+      leaderboard: combined,
+      my_rank: myRank,
     });
   } catch (err) {
     console.error("Leaderboard error:", err);

@@ -101,12 +101,13 @@ router.patch("/users/:id", authRequired, adminRequired, async (req, res) => {
   }
 });
 
-// GET /api/admin/contests - List contests
+// GET /api/admin/contests - List contests with seed user counts
 router.get("/contests", authRequired, adminRequired, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT c.*,
-        (SELECT COUNT(*) FROM contest_leaderboard cl WHERE cl.contest_id = c.id) as player_count,
+        (SELECT COUNT(*) FROM contest_leaderboard cl WHERE cl.contest_id = c.id) as real_player_count,
+        (SELECT COUNT(*) FROM contest_seed_users cs WHERE cs.contest_id = c.id) as seed_player_count,
         (SELECT COUNT(*) FROM contest_attempts ca WHERE ca.contest_id = c.id) as total_attempts
       FROM contests c ORDER BY c.starts_at DESC LIMIT 50
     `);
@@ -120,15 +121,149 @@ router.get("/contests", authRequired, adminRequired, async (req, res) => {
 // POST /api/admin/contests - Create contest
 router.post("/contests", authRequired, adminRequired, async (req, res) => {
   try {
-    const { name, type, prize_pool, max_players, max_attempts, starts_at, ends_at, is_daily } = req.body;
+    const { name, type, prize_pool, max_players, max_attempts, min_score_for_points, starts_at, ends_at, is_daily } = req.body;
     const result = await pool.query(
-      `INSERT INTO contests (name, type, prize_pool, max_players, max_attempts, starts_at, ends_at, is_daily)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-      [name, type, prize_pool, max_players, max_attempts || 10, starts_at, ends_at, is_daily || false]
+      `INSERT INTO contests (name, type, prize_pool, max_players, max_attempts, min_score_for_points, starts_at, ends_at, is_daily)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+      [name, type, prize_pool || 0, max_players || 100, max_attempts || 10, min_score_for_points || 0, starts_at, ends_at, is_daily || false]
     );
     res.status(201).json({ contest: result.rows[0] });
   } catch (err) {
     console.error("Create contest error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// PATCH /api/admin/contests/:id - Update contest
+router.patch("/contests/:id", authRequired, adminRequired, async (req, res) => {
+  try {
+    const { max_players, min_score_for_points, max_attempts, prize_pool, name } = req.body;
+    const contestId = parseInt(req.params.id);
+    const updates = [];
+    const params = [];
+    let idx = 1;
+
+    if (max_players !== undefined) { updates.push("max_players = $" + idx++); params.push(max_players); }
+    if (min_score_for_points !== undefined) { updates.push("min_score_for_points = $" + idx++); params.push(min_score_for_points); }
+    if (max_attempts !== undefined) { updates.push("max_attempts = $" + idx++); params.push(max_attempts); }
+    if (prize_pool !== undefined) { updates.push("prize_pool = $" + idx++); params.push(prize_pool); }
+    if (name !== undefined) { updates.push("name = $" + idx++); params.push(name); }
+
+    if (updates.length === 0) return res.status(400).json({ error: "No updates provided" });
+
+    params.push(contestId);
+    const result = await pool.query(
+      "UPDATE contests SET " + updates.join(", ") + " WHERE id = $" + idx + " RETURNING *",
+      params
+    );
+
+    res.json({ contest: result.rows[0] });
+  } catch (err) {
+    console.error("Update contest error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// GET /api/admin/contests/:id/seeds - Get seed users for a contest
+router.get("/contests/:id/seeds", authRequired, adminRequired, async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT * FROM contest_seed_users WHERE contest_id = $1 ORDER BY score DESC",
+      [parseInt(req.params.id)]
+    );
+    res.json({ seeds: result.rows });
+  } catch (err) {
+    console.error("Seeds error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// POST /api/admin/contests/:id/seeds - Add seed users to a contest
+router.post("/contests/:id/seeds", authRequired, adminRequired, async (req, res) => {
+  try {
+    const contestId = parseInt(req.params.id);
+    const { seeds } = req.body; // Array of { username, score }
+
+    if (!Array.isArray(seeds) || seeds.length === 0) {
+      return res.status(400).json({ error: "Seeds must be an array of { username, score }" });
+    }
+
+    const values = [];
+    const params = [];
+    let idx = 1;
+
+    for (const seed of seeds) {
+      values.push("($" + idx++ + ", $" + idx++ + ", $" + idx++ + ")");
+      params.push(contestId, seed.username, seed.score);
+    }
+
+    await pool.query(
+      "INSERT INTO contest_seed_users (contest_id, username, score) VALUES " + values.join(", "),
+      params
+    );
+
+    res.status(201).json({ added: seeds.length });
+  } catch (err) {
+    console.error("Add seeds error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// POST /api/admin/contests/:id/seeds/generate - Auto-generate seed users
+router.post("/contests/:id/seeds/generate", authRequired, adminRequired, async (req, res) => {
+  try {
+    const contestId = parseInt(req.params.id);
+    const { count = 20, min_score = 5, max_score = 40 } = req.body;
+
+    const botNames = [
+      "CryptoKing99", "LuckyAce", "GameMaster", "QuizWhiz", "StarPlayer",
+      "SwiftGuess", "ProGamer22", "PointsHunter", "TopScorer", "QuickDraw",
+      "BrainStorm", "TriviaKing", "SmartPlay", "GoldRush", "ChampX",
+      "NightOwl", "EagleEye", "PixelPro", "VictoryLap", "ThunderBolt",
+      "SpeedDemon", "BrainiacX", "FlashPoint", "CoinMaster", "MegaMind",
+      "StormRider", "PhoenixRise", "SilverFox", "DiamondHand", "WildCard",
+      "AceHigh", "StarGazer", "BlitzKing", "NeonWave", "TurboMax",
+      "ZenMaster", "RocketFuel", "IronWill", "GhostRider", "QuantumLeap",
+    ];
+
+    // Shuffle and pick names
+    const shuffled = botNames.sort(() => Math.random() - 0.5).slice(0, Math.min(count, botNames.length));
+    const seeds = shuffled.map((name) => ({
+      username: name,
+      score: Math.floor(Math.random() * (max_score - min_score + 1)) + min_score,
+    }));
+
+    // Clear existing seeds for this contest
+    await pool.query("DELETE FROM contest_seed_users WHERE contest_id = $1", [contestId]);
+
+    // Insert new seeds
+    const values = [];
+    const params = [];
+    let idx = 1;
+    for (const seed of seeds) {
+      values.push("($" + idx++ + ", $" + idx++ + ", $" + idx++ + ")");
+      params.push(contestId, seed.username, seed.score);
+    }
+
+    await pool.query(
+      "INSERT INTO contest_seed_users (contest_id, username, score) VALUES " + values.join(", "),
+      params
+    );
+
+    res.status(201).json({ generated: seeds.length, seeds: seeds });
+  } catch (err) {
+    console.error("Generate seeds error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// DELETE /api/admin/contests/:id/seeds - Clear seed users
+router.delete("/contests/:id/seeds", authRequired, adminRequired, async (req, res) => {
+  try {
+    await pool.query("DELETE FROM contest_seed_users WHERE contest_id = $1", [parseInt(req.params.id)]);
+    res.json({ cleared: true });
+  } catch (err) {
+    console.error("Clear seeds error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });

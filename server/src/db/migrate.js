@@ -25,9 +25,25 @@ CREATE TABLE IF NOT EXISTS contests (
   prize_pool NUMERIC(10,2) DEFAULT 0,
   max_players INTEGER DEFAULT 100,
   max_attempts INTEGER DEFAULT 10,
+  min_score_for_points INTEGER DEFAULT 0,
   starts_at TIMESTAMPTZ NOT NULL,
   ends_at TIMESTAMPTZ NOT NULL,
   is_daily BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Add min_score_for_points if not exists
+DO $$ BEGIN
+  ALTER TABLE contests ADD COLUMN min_score_for_points INTEGER DEFAULT 0;
+EXCEPTION WHEN duplicate_column THEN NULL;
+END $$;
+
+-- Seed users (fake leaderboard entries for contests)
+CREATE TABLE IF NOT EXISTS contest_seed_users (
+  id SERIAL PRIMARY KEY,
+  contest_id INTEGER REFERENCES contests(id) ON DELETE CASCADE,
+  username VARCHAR(50) NOT NULL,
+  score INTEGER NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

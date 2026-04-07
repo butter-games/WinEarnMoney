@@ -113,10 +113,49 @@
       <!-- Contests -->
       <div id="sec-contests" class="section">
         <h1 class="page-title">Contests</h1>
+
+        <!-- Create Contest Form -->
+        <div class="table-card" style="margin-bottom:20px">
+          <div class="table-header"><h3>Create New Contest</h3></div>
+          <div style="padding:16px 20px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+            <div><label style="font-size:0.7rem;color:var(--gray)">Name</label><input id="new-c-name" class="table-search" style="width:100%" placeholder="Contest name"></div>
+            <div><label style="font-size:0.7rem;color:var(--gray)">Type</label><select id="new-c-type" class="table-search" style="width:100%"><option value="free">Free</option><option value="subscriber">Subscriber</option></select></div>
+            <div><label style="font-size:0.7rem;color:var(--gray)">Prize Pool ($)</label><input id="new-c-prize" class="table-search" style="width:100%" type="number" value="10"></div>
+            <div><label style="font-size:0.7rem;color:var(--gray)">Max Players</label><input id="new-c-players" class="table-search" style="width:100%" type="number" value="100"></div>
+            <div><label style="font-size:0.7rem;color:var(--gray)">Max Attempts</label><input id="new-c-attempts" class="table-search" style="width:100%" type="number" value="10"></div>
+            <div><label style="font-size:0.7rem;color:var(--gray)">Min Score for Points</label><input id="new-c-minscore" class="table-search" style="width:100%" type="number" value="0"></div>
+            <div><label style="font-size:0.7rem;color:var(--gray)">Starts At</label><input id="new-c-start" class="table-search" style="width:100%" type="datetime-local"></div>
+            <div><label style="font-size:0.7rem;color:var(--gray)">Ends At</label><input id="new-c-end" class="table-search" style="width:100%" type="datetime-local"></div>
+          </div>
+          <div style="padding:0 20px 16px;display:flex;gap:8px;align-items:center">
+            <label style="font-size:0.8rem;color:var(--gray)"><input type="checkbox" id="new-c-daily"> Daily contest</label>
+            <button class="btn-sm" style="margin-left:auto" onclick="AdminPanel.createContest()">Create Contest</button>
+          </div>
+        </div>
+
+        <!-- Contests Table -->
         <div class="table-card">
-          <div class="table-header"><h3>All Contests</h3><button class="btn-sm" onclick="AdminPanel.seedContests()">Seed Today</button></div>
-          <table><thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Prize</th><th>Players</th><th>Attempts</th><th>Starts</th><th>Ends</th></tr></thead>
+          <div class="table-header"><h3>All Contests</h3><button class="btn-sm" onclick="AdminPanel.seedContestsViaAPI()">Seed Today's Contests</button></div>
+          <table><thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Prize</th><th>Max Players</th><th>Real/Seed</th><th>Min Score</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody id="contests-table"></tbody></table>
+        </div>
+
+        <!-- Seed Users Modal -->
+        <div id="seed-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:none;align-items:center;justify-content:center">
+          <div style="background:var(--card);border-radius:10px;padding:28px;max-width:500px;width:90%">
+            <h3 style="color:var(--white);margin-bottom:16px">Seed Users - Contest #<span id="seed-contest-id"></span></h3>
+            <div style="display:flex;gap:8px;margin-bottom:12px">
+              <div><label style="font-size:0.7rem;color:var(--gray)">Count</label><input id="seed-count" class="table-search" type="number" value="20" style="width:80px"></div>
+              <div><label style="font-size:0.7rem;color:var(--gray)">Min Score</label><input id="seed-min" class="table-search" type="number" value="5" style="width:80px"></div>
+              <div><label style="font-size:0.7rem;color:var(--gray)">Max Score</label><input id="seed-max" class="table-search" type="number" value="40" style="width:80px"></div>
+              <button class="btn-sm" style="align-self:flex-end" onclick="AdminPanel.generateSeeds()">Generate</button>
+            </div>
+            <div id="seed-list" style="max-height:200px;overflow-y:auto;margin-bottom:12px"></div>
+            <div style="display:flex;gap:8px;justify-content:flex-end">
+              <button class="btn-sm btn-sm-red" onclick="AdminPanel.clearSeeds()">Clear All</button>
+              <button class="btn-sm" onclick="document.getElementById('seed-modal').style.display='none'">Close</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -263,17 +302,103 @@
           tbody.innerHTML = data.contests.map(function(c) {
             var now = new Date();
             var active = new Date(c.starts_at) <= now && new Date(c.ends_at) > now;
+            var realPlayers = parseInt(c.real_player_count) || 0;
+            var seedPlayers = parseInt(c.seed_player_count) || 0;
+            var statusBadge = active ? '<span class="badge badge-green">LIVE</span>' :
+              (new Date(c.ends_at) < now ? '<span class="badge badge-red">ENDED</span>' : '<span class="badge badge-yellow">UPCOMING</span>');
             return "<tr><td>" + c.id + "</td><td>" + c.name + "</td><td>" +
               '<span class="badge ' + (c.type === "free" ? "badge-green" : "badge-blue") + '">' + c.type + "</span></td>" +
-              "<td>$" + parseFloat(c.prize_pool).toFixed(0) + "</td><td>" + (c.player_count || 0) + "/" + c.max_players +
-              "</td><td>" + (c.total_attempts || 0) + "</td><td>" + new Date(c.starts_at).toLocaleString() +
-              "</td><td>" + (active ? '<span class="badge badge-green">LIVE</span>' : new Date(c.ends_at).toLocaleString()) + "</td></tr>";
+              "<td>$" + parseFloat(c.prize_pool).toFixed(0) + "</td>" +
+              "<td>" + c.max_players + "</td>" +
+              "<td>" + realPlayers + " / " + seedPlayers + "</td>" +
+              "<td>" + (c.min_score_for_points || 0) + "</td>" +
+              "<td>" + statusBadge + "</td>" +
+              '<td><button class="btn-sm" onclick="AdminPanel.editContest(' + c.id + ',' + c.max_players + ',' + (c.min_score_for_points||0) + ')">Edit</button> ' +
+              '<button class="btn-sm" onclick="AdminPanel.openSeedModal(' + c.id + ')">Seeds</button></td></tr>';
           }).join("");
         } catch (err) { console.error(err); }
       },
 
-      async seedContests() {
-        alert("Run on server: cd ~/WinEarnMoney/server && node src/db/seed.js");
+      editContest(id, currentMaxPlayers, currentMinScore) {
+        var maxP = prompt("Max Players (current: " + currentMaxPlayers + "):", currentMaxPlayers);
+        var minS = prompt("Min Score for Points (current: " + currentMinScore + "):", currentMinScore);
+        if (maxP === null && minS === null) return;
+        var updates = {};
+        if (maxP !== null && maxP !== "") updates.max_players = parseInt(maxP);
+        if (minS !== null && minS !== "") updates.min_score_for_points = parseInt(minS);
+        this.request("PATCH", "/api/admin/contests/" + id, updates).then(function() {
+          AdminPanel.loadContests();
+        }).catch(function(err) { alert(err.message); });
+      },
+
+      currentSeedContestId: null,
+
+      openSeedModal(contestId) {
+        this.currentSeedContestId = contestId;
+        document.getElementById("seed-contest-id").textContent = contestId;
+        document.getElementById("seed-modal").style.display = "flex";
+        this.loadSeeds(contestId);
+      },
+
+      async loadSeeds(contestId) {
+        try {
+          var data = await this.request("GET", "/api/admin/contests/" + contestId + "/seeds");
+          var list = document.getElementById("seed-list");
+          if (data.seeds.length === 0) {
+            list.innerHTML = '<p style="color:var(--gray);font-size:0.85rem">No seed users. Click Generate to add some.</p>';
+          } else {
+            list.innerHTML = '<table style="width:100%"><thead><tr><th>Username</th><th>Score</th></tr></thead><tbody>' +
+              data.seeds.map(function(s) {
+                return "<tr><td>" + s.username + "</td><td>" + s.score + "</td></tr>";
+              }).join("") + "</tbody></table>";
+          }
+        } catch (err) { console.error(err); }
+      },
+
+      async generateSeeds() {
+        var count = parseInt(document.getElementById("seed-count").value) || 20;
+        var minScore = parseInt(document.getElementById("seed-min").value) || 5;
+        var maxScore = parseInt(document.getElementById("seed-max").value) || 40;
+        try {
+          await this.request("POST", "/api/admin/contests/" + this.currentSeedContestId + "/seeds/generate", {
+            count: count, min_score: minScore, max_score: maxScore
+          });
+          this.loadSeeds(this.currentSeedContestId);
+          this.loadContests();
+        } catch (err) { alert(err.message); }
+      },
+
+      async clearSeeds() {
+        if (!confirm("Clear all seed users for this contest?")) return;
+        try {
+          await this.request("DELETE", "/api/admin/contests/" + this.currentSeedContestId + "/seeds");
+          this.loadSeeds(this.currentSeedContestId);
+          this.loadContests();
+        } catch (err) { alert(err.message); }
+      },
+
+      async createContest() {
+        var body = {
+          name: document.getElementById("new-c-name").value,
+          type: document.getElementById("new-c-type").value,
+          prize_pool: parseFloat(document.getElementById("new-c-prize").value) || 0,
+          max_players: parseInt(document.getElementById("new-c-players").value) || 100,
+          max_attempts: parseInt(document.getElementById("new-c-attempts").value) || 10,
+          min_score_for_points: parseInt(document.getElementById("new-c-minscore").value) || 0,
+          starts_at: document.getElementById("new-c-start").value,
+          ends_at: document.getElementById("new-c-end").value,
+          is_daily: document.getElementById("new-c-daily").checked,
+        };
+        if (!body.name || !body.starts_at || !body.ends_at) { alert("Name, start, and end dates are required"); return; }
+        try {
+          await this.request("POST", "/api/admin/contests", body);
+          alert("Contest created!");
+          this.loadContests();
+        } catch (err) { alert(err.message); }
+      },
+
+      async seedContestsViaAPI() {
+        alert("Run on server: cd ~/WinEarnMoney/server && node src/db/seed.js\nOr create contests using the form above.");
       },
 
       async loadWithdrawals(status) {
