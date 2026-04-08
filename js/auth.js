@@ -238,14 +238,14 @@ window.Auth = (() => {
         if (ctaBtn) {
           ctaBtn.textContent = "Go to Games";
           ctaBtn.onclick = function() {
-            window.location.href = "games/index.html";
+            window.location.href = "games/tournament.html";
           };
         }
 
         var heroCta = document.getElementById("hero-cta");
         if (heroCta) {
           heroCta.textContent = "Start Playing";
-          heroCta.href = "games/index.html";
+          heroCta.href = "games/tournament.html";
         }
       } else {
         var ctaBtn2 = document.getElementById("cta-btn");
